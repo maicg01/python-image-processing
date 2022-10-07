@@ -1,8 +1,11 @@
 import imp
 from mtcnn import MTCNN
 import cv2
+import os
 
-img = cv2.cvtColor(cv2.imread("/home/devai01/Me/python-image-processing/people.jpg"), cv2.COLOR_BGR2RGB)
+os.chdir('/home/devai01/Me/python-image-processing/')
+# os.chdir('/home/devai01/Me/')
+img = cv2.cvtColor(cv2.imread("people.jpg"), cv2.COLOR_BGR2RGB)
 detector = MTCNN()
 
 faces = detector.detect_faces(img)
@@ -30,7 +33,8 @@ def draw(image, face):
         # for key, value in person['keypoints'].items():
         #     cv2.circle(image, value, 2, (0, 155, 255), 2)
 
-    cv2.imwrite("img.jpg", image)
+    os.chdir('/home/devai01/Me/python-image-processing/results')
+    cv2.imwrite("face-detection-MTCNN.jpg", image)
 
 
 draw(img, faces)
