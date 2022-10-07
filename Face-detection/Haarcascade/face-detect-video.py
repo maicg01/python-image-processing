@@ -1,7 +1,8 @@
+from re import I
 import cv2
 
 # Load the cascade
-face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier('/home/devai01/Me/python-image-processing/file-haarcascade/haarcascade_frontalface_default.xml')
 
 # To capture video from webcam. 
 # cap = cv2.VideoCapture(0)
@@ -15,7 +16,7 @@ size = (frame_width, frame_height)
 
 result = cv2.VideoWriter('filename.avi', 
                          cv2.VideoWriter_fourcc(*'MJPG'),
-                         10, size)
+                         24, size)
 
 
 
@@ -29,10 +30,11 @@ while True:
     # Draw the rectangle around each face
     for (x, y, w, h) in faces:
         cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
-
+        print(h)
     
     # # Display
-    cv2.imshow('img', img)
+    # cv2.imshow('img', img)
+    result.write(img)
     # Stop if escape key is pressed
     k = cv2.waitKey(30) & 0xff
     if k==27:
