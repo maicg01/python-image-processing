@@ -1,0 +1,4 @@
+chay file 
+python scrfd2onnx.py --config ../configs/scrfd/scrfd_2.5g.py --checkpoint /home/maicg/Documents/python-image-processing/insight-face/work_dirs/scrfd_2.5g/model.pth
+
+note: chi co file onnx, tu viet chuong trinh rieng cho file suy luan 
