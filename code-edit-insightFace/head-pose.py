@@ -13,6 +13,7 @@ import os
 import os.path as osp
 import cv2
 import sys
+import math
 
 def softmax(z):
     assert len(z.shape) == 2
@@ -304,17 +305,25 @@ def scrfd_2p5gkps(**kwargs):
     return get_scrfd("2p5gkps", download=True, **kwargs)
 
 
-def xyz_coordinates(kpss, bboxes,img):
-    for i in range(bboxes.shape[0]):
-        if kpss is not None:
-            kps = kpss[i]
-            l_eye = kps[0]
-            r_eye = kps[1]
-            nose = kps[2]
-            l_mouth = kps[3]
-            r_mouth = kps[4]
-            # kp = l4.astype(np.int)
-            # cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
+def xyz_coordinates(kps):
+    l_eye = kps[0]
+    r_eye = kps[1]
+    nose = kps[2]
+    l_mouth = kps[3]
+    r_mouth = kps[4]
+    # kp = l4.astype(np.int)
+    # cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
+    center1 = (l_eye + l_mouth)/2
+    # print('=======================center1',center1)
+    center2 = (r_eye + r_mouth)/2
+    distance12 = math.dist(center1,center2)
+    # print('=======================distance12',distance12)
+    
+    distance_nose1 = math.dist(center1, nose)
+    distance_nose2 = math.dist(center2, nose)
+    
+    return distance12, distance_nose1, distance_nose2
+
 
                 
 
@@ -327,8 +336,8 @@ def main():
     detector = SCRFD(model_file='./onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
     # img_paths = ['/home/maicg/Documents/python-image-processing/insight-face/tests/data/t4.jpg']
-    # cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/people_check.mp4')
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/pexels-yaroslav-shuraev-5978700.mp4')
+    # cap = cv2.VideoCapture(0)
     k = 0
     while True:
         result, img = cap.read()
@@ -343,39 +352,46 @@ def main():
             tb = datetime.datetime.now()
         #     print('all cost:', (tb-ta).total_seconds()*1000)
         # print(img_path, bboxes.shape)
-        print(bboxes.shape)
-        print(kpss.shape)
+        # print(bboxes.shape)
+        # print(kpss.shape)
 
         ###code them####
-        xyz_coordinates(kpss, bboxes,img)
+        # distance12, distance_nose1, distance_nose2 = xyz_coordinates(kpss, bboxes)
 
 
 
 
+        if kpss is not None:
+            print("======================================")
+            # print(kpss.shape)
+            # print(kpss)
+        for i in range(bboxes.shape[0]):
+            bbox = bboxes[i]
+            x1,y1,x2,y2,score = bbox.astype(np.int)
+            # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+            crop_img = img[y1:y2, x1:x2]
+            if kpss is not None:
+                kps = kpss[i]
+                # print(kps.shape)
+                # for kp in kps:
+                #     # print(len(kps))
+                #     kp = kp.astype(np.int)
+                #     cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
+                distance12, distance_nose1, distance_nose2 = xyz_coordinates(kps)
+                if distance12 > distance_nose1 and distance12 > distance_nose2:
+                    # if abs(distance_nose1-distance_nose2) <= 1.5:
+                        cv2.imwrite('./outputs/frame%s.jpg'%str(k), crop_img)
+                        # print('============================kkkkk',k)
+                        k=k+1
 
-        # if kpss is not None:
-        #     print("======================================")
-        #     # print(kpss.shape)
-        #     # print(kpss)
-        # for i in range(bboxes.shape[0]):
-        #     bbox = bboxes[i]
-        #     x1,y1,x2,y2,score = bbox.astype(np.int)
-        #     # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
-        #     crop_img = img[y1:y2, x1:x2]
-        #     if kpss is not None:
-        #         kps = kpss[i]
-        #         # print(kps.shape)
-        #         for kp in kps:
-        #             print(len(kps))
-        #             kp = kp.astype(np.int)
-        #             cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
-        #     # print('output:', filename)
-        # # cv2.imwrite('./outputs/frame%s.jpg'%str(k), crop_img)
-        # # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        cv2.imshow("image", img)
-        if cv2.waitKey(1) == ord('q'):
-            break
+
+
+            # print('output:', filename)
+        # cv2.imwrite('./outputs/frame%s.jpg'%str(k), crop_img)
+        # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        # cv2.imshow("image", img)
+        # if cv2.waitKey(1) == ord('q'):
+        #     break
         print('Doneeeee')
-        # k=k+1
-
+        k=k+1
 main()
