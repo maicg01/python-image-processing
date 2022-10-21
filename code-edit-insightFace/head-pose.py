@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Organization  : insightface.ai
-# @Author        : Jia Guo
-# @Time          : 2021-05-04
-# @Function      : 
-
 from __future__ import division
 import datetime
 import numpy as np
@@ -14,6 +8,7 @@ import os.path as osp
 import cv2
 import sys
 import math
+import matplotlib.pyplot as plt
 
 def softmax(z):
     assert len(z.shape) == 2
@@ -322,11 +317,55 @@ def xyz_coordinates(kps):
     distance_nose1 = math.dist(center1, nose)
     distance_nose2 = math.dist(center2, nose)
     
-    return distance12, distance_nose1, distance_nose2
+    return distance12, distance_nose1, distance_nose2, l_eye, r_eye
+
+def euclidean_distance(a, b):
+    x1 = a[0]; y1 = a[1]
+    x2 = b[0]; y2 = b[1]
+    return math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)))
+
+def compute_euler(img, l_eye, r_eye):
+    left_eye_x = l_eye[0]; left_eye_y = l_eye[1]
+    right_eye_x = r_eye[0]; right_eye_y = r_eye[1]
+
+    # cv2.circle(img, left_eye_center, 2, (255, 0, 0) , 2)
+    # cv2.circle(img, right_eye_center, 2, (255, 0, 0) , 2)
+    # cv2.line(img,right_eye_center, left_eye_center,(67,67,67),2)
+    # plt.imshow(img[:,:,::-1])
+    # plt.show()
+
+    if left_eye_y > right_eye_y:
+        point_3rd = (right_eye_x, left_eye_y)
+        direction = -1 #rotate same direction to clock
+        print("rotate to clock direction")
+    else:
+        point_3rd = (left_eye_x, right_eye_y)
+        direction = 1 #rotate inverse direction of clock
+        print("rotate to inverse clock direction")
 
 
-                
 
+    a = euclidean_distance(l_eye, point_3rd)
+    b = euclidean_distance(r_eye, l_eye)
+    c = euclidean_distance(r_eye, point_3rd)
+
+    cos_a = (b*b + c*c - a*a)/(2*b*c)
+    print("cos(a) = ", cos_a)
+    
+    angle = np.arccos(cos_a)
+    print("angle: ", angle," in radian")
+    
+    angle = (angle * 180) / math.pi
+    print("angle: ", angle," in degree")
+
+    if direction == -1:
+        angle = 90 - angle
+
+    from PIL import Image
+    new_img = Image.fromarray(img)
+    new_img = np.array(new_img.rotate(direction * angle))
+    
+    return new_img
 
 def main():
     import glob
@@ -336,7 +375,7 @@ def main():
     detector = SCRFD(model_file='./onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
     # img_paths = ['/home/maicg/Documents/python-image-processing/insight-face/tests/data/t4.jpg']
-    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/pexels-yaroslav-shuraev-5978700.mp4')
+    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/pexels-cristian-rojas-7535485.mp4')
     # cap = cv2.VideoCapture(0)
     k = 0
     while True:
@@ -377,21 +416,16 @@ def main():
                 #     # print(len(kps))
                 #     kp = kp.astype(np.int)
                 #     cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
-                distance12, distance_nose1, distance_nose2 = xyz_coordinates(kps)
+                distance12, distance_nose1, distance_nose2, l_eye, r_eye = xyz_coordinates(kps)
                 if distance12 > distance_nose1 and distance12 > distance_nose2:
-                    # if abs(distance_nose1-distance_nose2) <= 1.5:
-                        cv2.imwrite('./outputs/frame%s.jpg'%str(k), crop_img)
+                    if abs(distance_nose1-distance_nose2) <= 0.5:
+                        rotate_img = compute_euler(crop_img, l_eye, r_eye)
+                        cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k), rotate_img)
+                        cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k+1), crop_img)
+                        plt.imshow(rotate_img[:,:,::-1])
+                        plt.show()
                         # print('============================kkkkk',k)
-                        k=k+1
+                        k=k+2
 
-
-
-            # print('output:', filename)
-        # cv2.imwrite('./outputs/frame%s.jpg'%str(k), crop_img)
-        # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        # cv2.imshow("image", img)
-        # if cv2.waitKey(1) == ord('q'):
-        #     break
         print('Doneeeee')
-        k=k+1
 main()
