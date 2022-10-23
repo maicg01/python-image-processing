@@ -2,6 +2,8 @@ import numpy as np
 import mediapipe as mp
 import cv2
 import math
+import matplotlib.pyplot as plt
+
 
 def x_element(elem):
     return elem[0]
@@ -89,7 +91,55 @@ def face_orientation(frame, faceXY):
     roll = -math.degrees(math.asin(math.sin(roll)))
     yaw = math.degrees(math.asin(math.sin(yaw)))
 
-    return imgpts, modelpts, (str(int(roll)), str(int(pitch)), str(int(yaw))), image_points, faceXY[1]
+    return imgpts, modelpts, (str(int(roll)), str(int(pitch)), str(int(yaw))), image_points, faceXY[1], faceXY[226], faceXY[446]
+
+def euclidean_distance(a, b):
+    x1 = a[0]; y1 = a[1]
+    x2 = b[0]; y2 = b[1]
+    return math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)))
+
+def compute_euler(img, l_eye, r_eye):
+    left_eye_x = l_eye[0]; left_eye_y = l_eye[1]
+    right_eye_x = r_eye[0]; right_eye_y = r_eye[1]
+
+    # cv2.circle(img, left_eye_center, 2, (255, 0, 0) , 2)
+    # cv2.circle(img, right_eye_center, 2, (255, 0, 0) , 2)
+    # cv2.line(img,right_eye_center, left_eye_center,(67,67,67),2)
+    # plt.imshow(img[:,:,::-1])
+    # plt.show()
+
+    if left_eye_y > right_eye_y:
+        point_3rd = (right_eye_x, left_eye_y)
+        direction = -1 #rotate same direction to clock
+        print("rotate to clock direction")
+    else:
+        point_3rd = (left_eye_x, right_eye_y)
+        direction = 1 #rotate inverse direction of clock
+        print("rotate to inverse clock direction")
+
+
+
+    a = euclidean_distance(l_eye, point_3rd)
+    b = euclidean_distance(r_eye, l_eye)
+    c = euclidean_distance(r_eye, point_3rd)
+
+    cos_a = (b*b + c*c - a*a)/(2*b*c)
+    print("cos(a) = ", cos_a)
+    
+    angle = np.arccos(cos_a)
+    print("angle: ", angle," in radian")
+    
+    angle = (angle * 180) / math.pi
+    print("angle: ", angle," in degree")
+
+    if direction == -1:
+        angle = 90 - angle
+
+    from PIL import Image
+    new_img = Image.fromarray(img)
+    new_img = np.array(new_img.rotate(direction * angle))
+    
+    return new_img
 
 
 t = 0
@@ -108,7 +158,7 @@ while True:
                 # print(lm)
                 faceXY.append((x, y))                                           # put all xy points in neat array
 
-            imgpts, modelpts, rotate_degree, image_points, nose = face_orientation(imgRGB, faceXY)
+            imgpts, modelpts, rotate_degree, image_points, nose, l_eye, r_eye = face_orientation(imgRGB, faceXY)
 
             for i in image_points:
                 cv2.circle(img,(int(i[0]),int(i[1])),4,(255,0,0),-1)
@@ -147,6 +197,13 @@ while True:
 
             if k == 3:
                 print('true')
+                rotate_img = compute_euler(img, l_eye, r_eye)
+                cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k), rotate_img)
+                # cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k+1), crop_img)
+                plt.imshow(rotate_img[:,:,::-1])
+                plt.show()
+                # print('============================kkkkk',k)
+                k=k+2
                 cv2.imwrite('./outputs/frame%s.jpg'%str(t), img)  
 
     t +=1
