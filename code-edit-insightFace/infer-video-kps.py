@@ -23,7 +23,7 @@ def softmax(z):
     div = div[:, np.newaxis] # dito
     return e_x / div
 
-def distance2bbox(points, distance, max_shape=None):
+def distance2bbox(points, distance, max_shape=None): #tra ve hop gioi han
     """Decode distance prediction to bounding box.
 
     Args:
@@ -39,14 +39,22 @@ def distance2bbox(points, distance, max_shape=None):
     y1 = points[:, 1] - distance[:, 1]
     x2 = points[:, 0] + distance[:, 2]
     y2 = points[:, 1] + distance[:, 3]
-    if max_shape is not None:
-        x1 = x1.clamp(min=0, max=max_shape[1])
-        y1 = y1.clamp(min=0, max=max_shape[0])
-        x2 = x2.clamp(min=0, max=max_shape[1])
-        y2 = y2.clamp(min=0, max=max_shape[0])
+    # print("x1, y1, x2, y2", x1, y1, x2, y2)
+    # if max_shape is not None:
+    #     x1 = x1.clamp(min=0, max=max_shape[1])
+    #     print("====================x1", x1)
+    #     y1 = y1.clamp(min=0, max=max_shape[0])
+    #     print("====================y1", y1)
+
+    #     x2 = x2.clamp(min=0, max=max_shape[1])
+    #     print("====================x2", x2)
+
+    #     y2 = y2.clamp(min=0, max=max_shape[0])
+    #     print("====================y2", y2)
+
     return np.stack([x1, y1, x2, y2], axis=-1)
 
-def distance2kps(points, distance, max_shape=None):
+def distance2kps(points, distance, max_shape=None): #tra ve toa do diem tren mat
     """Decode distance prediction to bounding box.
 
     Args:
@@ -84,7 +92,7 @@ class SCRFD:
         self.nms_thresh = 0.4
         self._init_vars()
 
-    def _init_vars(self):
+    def _init_vars(self): #cai dat tham so dua vao mang hien thi tren neutron
         input_cfg = self.session.get_inputs()[0]
         input_shape = input_cfg.shape
         if isinstance(input_shape[2], str):
@@ -121,7 +129,7 @@ class SCRFD:
             self._num_anchors = 1
             self.use_kps = True
 
-    def prepare(self, ctx_id, **kwargs):
+    def prepare(self, ctx_id, **kwargs): #chi can dong self.session.set_providers(['CPUExecutionProvider'])
         if ctx_id<0:
             self.session.set_providers(['CPUExecutionProvider'])
         nms_thresh = kwargs.get('nms_thresh', None)
@@ -316,7 +324,7 @@ def main():
     while True:
         result, img = cap.read()
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (640,640))
+        # img = cv2.resize(img, (640,640))
 
         for _ in range(1):
             ta = datetime.datetime.now()

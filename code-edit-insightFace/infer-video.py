@@ -198,7 +198,7 @@ class SCRFD:
         # print("pre_det: ", pre_det)
 
         keep = self.nms(pre_det)
-        print("keep: ", keep)
+        # print("keep: ", keep)
 
         det = pre_det[keep, :]
         if self.use_kps:
@@ -232,13 +232,23 @@ class SCRFD:
         bboxes_list = []
         kpss_list = []
         input_size = tuple(img.shape[0:2][::-1])
-        blob = cv2.dnn.blobFromImage(img, 1.0/128, input_size, (127.5, 127.5, 127.5), swapRB=True)
+        # print("input_size: ", input_size)
+
+        
+        blob = cv2.dnn.blobFromImage(img, 1.0/128, input_size, (127.5, 127.5, 127.5), swapRB=True) #preprocessing images va chuan bi du lieu cho phan loai trong model pretrained
+                                                                                            # Mean subtraction, SCALing, channel swapping
+        # print("blob: ", blob)
+
         net_outs = self.session.run(self.output_names, {self.input_name : blob})
+        # print("net_outs: ", net_outs)
 
         input_height = blob.shape[2]
         input_width = blob.shape[3]
+        # print("input_height: ", input_height)
+        # print("input_width: ", input_width)
         fmc = self.fmc
         for idx, stride in enumerate(self._feat_stride_fpn):
+            # print("idx, stride", idx, stride)
             # If model support batch dim, take first output
             if self.batched:
                 scores = net_outs[idx][0]
@@ -333,10 +343,10 @@ def main():
     #detector = SCRFD(model_file='./det.onnx')
     # detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_500m.onnx')
     # detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_34g.onnx')
-    detector = SCRFD(model_file='E:\python-image-processing\code-edit-insightFace\onnx\scrfd_2.5g.onnx')
+    detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/code-edit-insightFace/onnx/scrfd_10g.onnx')
     detector.prepare(-1)
     # img_paths = ['/home/maicg/Documents/python-image-processing/insight-face/tests/data/t4.jpg']
-    cap = cv2.VideoCapture('E:\python-image-processing\people_check.mp4')
+    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/people_check.mp4')
     while True:
         result, img = cap.read()
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -347,27 +357,27 @@ def main():
             bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
             # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640), max_num=1)
             # bboxes, kpss = detector.detect(img, 0.5)
-        #     tb = datetime.datetime.now()
-        # #     print('all cost:', (tb-ta).total_seconds()*1000)
-        # # print(img_path, bboxes.shape)
-        # if kpss is not None:
-        #     print(kpss.shape)
-        # for i in range(bboxes.shape[0]):
-        #     bbox = bboxes[i]
-        #     x1,y1,x2,y2,score = bbox.astype(np.int)
-        #     cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
-        #     if kpss is not None:
-        #         kps = kpss[i]
-        #         for kp in kps:
-        #             kp = kp.astype(np.int)
-        #             cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
-        # # filename = img_path.split('/')[-1]
-        # # print('output:', filename)
-        # # cv2.imwrite('./outputs/%s'%filename, img)
-        # # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        # cv2.imshow("image", img)
-        # if cv2.waitKey(1) == ord('q'):
-        #     break
-        # print('Doneeeee')
+            tb = datetime.datetime.now()
+        #     print('all cost:', (tb-ta).total_seconds()*1000)
+        # print(img_path, bboxes.shape)
+        if kpss is not None:
+            print(kpss.shape)
+        for i in range(bboxes.shape[0]):
+            bbox = bboxes[i]
+            x1,y1,x2,y2,score = bbox.astype(np.int)
+            cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+            if kpss is not None:
+                kps = kpss[i]
+                for kp in kps:
+                    kp = kp.astype(np.int)
+                    cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
+        # filename = img_path.split('/')[-1]
+        # print('output:', filename)
+        # cv2.imwrite('./outputs/%s'%filename, img)
+        # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        cv2.imshow("image", img)
+        if cv2.waitKey(1) == ord('q'):
+            break
+        print('Doneeeee')
 
 main()

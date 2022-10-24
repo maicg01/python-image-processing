@@ -7,7 +7,7 @@ import time
 
 os.chdir('/home/devai01/Me/python-image-processing/')
 # os.chdir('/home/devai01/Me/')
-cap = video = cv2.VideoCapture('people_check.mp4')
+cap = cv2.VideoCapture('people_check.mp4')
 detector = MTCNN()
 
 

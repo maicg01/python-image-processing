@@ -10,7 +10,7 @@ def x_element(elem):
 def y_element(elem):
     return elem[1]
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/pexels-cristian-rojas-7535485.mp4')
 pTime = 0
 faceXY = []
 mpDraw = mp.solutions.drawing_utils
@@ -145,8 +145,10 @@ def compute_euler(img, l_eye, r_eye):
 t = 0
 while True:
     success, img = cap.read()
-    imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    results = faceMesh.process(imgRGB)
+    # imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # imgRGB = cv2.resize(imgRGB, (640,640))
+    # img = cv2.resize(img, (640,640))
+    results = faceMesh.process(img)
     if results.multi_face_landmarks:                                            # if faces found
         dist=[]
         for faceNum, faceLms in enumerate(results.multi_face_landmarks):                            # loop through all matches
@@ -158,7 +160,7 @@ while True:
                 # print(lm)
                 faceXY.append((x, y))                                           # put all xy points in neat array
 
-            imgpts, modelpts, rotate_degree, image_points, nose, l_eye, r_eye = face_orientation(imgRGB, faceXY)
+            imgpts, modelpts, rotate_degree, image_points, nose, l_eye, r_eye = face_orientation(img, faceXY)
 
             for i in image_points:
                 cv2.circle(img,(int(i[0]),int(i[1])),4,(255,0,0),-1)
@@ -192,21 +194,21 @@ while True:
         k=0
         for j in range(len(rotate_degree)):
             cv2.putText(img, (lt[j] + '  ''{:05.2f}' ).format(float(rotate_degree[j])), (10, 30 + (50 * j)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), thickness=2, lineType=2)
-            if -5 <= float(rotate_degree[j]) <= 5:
+            if -20 <= float(rotate_degree[j]) <= 20:
                 k += 1
 
             if k == 3:
                 print('true')
                 rotate_img = compute_euler(img, l_eye, r_eye)
-                cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k), rotate_img)
+                cv2.imwrite('./demo/t3/frame%s.jpg'%str(t), rotate_img)
                 # cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k+1), crop_img)
                 plt.imshow(rotate_img[:,:,::-1])
                 plt.show()
-                # print('============================kkkkk',k)
-                k=k+2
-                cv2.imwrite('./outputs/frame%s.jpg'%str(t), img)  
+                # cv2.imwrite('./outputs/frame%s.jpg'%str(t), img)  
+                # cv2.imwrite('./outputs/test1/frame%s.jpg'%str(t), img)  
 
     t +=1
 
-    cv2.imshow("Image", img)
+    cv2.imshow("Image", cv2.resize(img,(1028,1028)))
+    # cv2.imshow("Image", img)
     cv2.waitKey(1)

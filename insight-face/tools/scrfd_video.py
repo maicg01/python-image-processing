@@ -6,6 +6,7 @@
 
 from __future__ import division
 import datetime
+import imp
 import numpy as np
 import onnx
 import onnxruntime
@@ -13,6 +14,7 @@ import os
 import os.path as osp
 import cv2
 import sys
+import time
 
 def softmax(z):
     assert len(z.shape) == 2
@@ -303,7 +305,7 @@ def get_scrfd(name, download=False, root='~/.insightface/models', **kwargs):
 def scrfd_2p5gkps(**kwargs):
     return get_scrfd("2p5gkps", download=True, **kwargs)
 
-
+start_time = time.time()
 if __name__ == '__main__':
     import glob
     #detector = SCRFD(model_file='./det.onnx')
@@ -340,7 +342,9 @@ if __name__ == '__main__':
         # print('output:', filename)
         # cv2.imwrite('./outputs/%s'%filename, img)
         cv2.imshow("image", img)
+        # print("--- %s seconds ---" % (time.time() - start_time))
         if cv2.waitKey(1) == ord('q'):
             break
         print('Doneeeee')
+    
 

@@ -419,9 +419,9 @@ def main():
                 distance12, distance_nose1, distance_nose2, l_eye, r_eye = xyz_coordinates(kps)
                 if distance12 > distance_nose1 and distance12 > distance_nose2:
                     if abs(distance_nose1-distance_nose2) <= 0.5:
-                        rotate_img = compute_euler(crop_img, l_eye, r_eye)
+                        rotate_img = compute_euler(img, l_eye, r_eye)
                         cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k), rotate_img)
-                        cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k+1), crop_img)
+                        cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k+1), img)
                         plt.imshow(rotate_img[:,:,::-1])
                         plt.show()
                         # print('============================kkkkk',k)

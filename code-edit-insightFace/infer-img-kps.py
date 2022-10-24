@@ -13,15 +13,7 @@ import os
 import os.path as osp
 import cv2
 import sys
-
-def softmax(z):
-    assert len(z.shape) == 2
-    s = np.max(z, axis=1)
-    s = s[:, np.newaxis] # necessary step to do broadcasting
-    e_x = np.exp(z - s)
-    div = np.sum(e_x, axis=1)
-    div = div[:, np.newaxis] # dito
-    return e_x / div
+import matplotlib.pyplot as plt
 
 def distance2bbox(points, distance, max_shape=None):
     """Decode distance prediction to bounding box.
@@ -307,9 +299,9 @@ def scrfd_2p5gkps(**kwargs):
 if __name__ == '__main__':
     import glob
     #detector = SCRFD(model_file='./det.onnx')
-    detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/code-edit-insightFace/onnx/scrfd_2.5g_bnkps.onnx')
+    detector = SCRFD(model_file='./onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
-    img_paths = ['/home/maicg/Documents/python-image-processing/people.jpg']
+    img_paths = ['/home/maicg/Documents/python-image-processing/person.jpg']
     for img_path in img_paths:
         img = cv2.imread(img_path)
 
@@ -326,13 +318,17 @@ if __name__ == '__main__':
             bbox = bboxes[i]
             x1,y1,x2,y2,score = bbox.astype(np.int)
             cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+            crop_img = img[y1:y2, x1:x2]
             if kpss is not None:
                 kps = kpss[i]
                 for kp in kps:
                     kp = kp.astype(np.int)
                     cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
         filename = img_path.split('/')[-1]
-        print('output:', filename)
-        cv2.imwrite('./outputs/%s'%filename, img)
-        print('Doneeeee')
+        # print('output:', filename)
+        # cv2.imwrite('./outputs/%s'%filename, img)
+        # print('Doneeeee')
+        crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB )
+        plt.imshow(crop_img)
+        plt.show()
 

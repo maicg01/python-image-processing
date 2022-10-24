@@ -259,9 +259,9 @@ class SCRFD:
 def main():
     import glob
     #detector = SCRFD(model_file='./det.onnx')
-    detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_500m.onnx')
+    detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/code-edit-insightFace/onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
-    img_paths = ['/home/maicg/Documents/python-image-processing/insight-face/tests/data/t4.jpg']
+    img_paths = ['/home/maicg/Documents/python-image-processing/person.jpg']
     for img_path in img_paths:
         img = cv2.imread(img_path)
 
@@ -269,6 +269,7 @@ def main():
             ta = datetime.datetime.now()
             bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640))
             # bboxes, kpss = detector.detect(img, 0.5)
+
             tb = datetime.datetime.now()
             print('all cost:', (tb-ta).total_seconds()*1000)
         print(img_path, bboxes.shape)
