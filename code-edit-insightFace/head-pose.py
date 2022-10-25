@@ -316,8 +316,17 @@ def xyz_coordinates(kps):
     
     distance_nose1 = math.dist(center1, nose)
     distance_nose2 = math.dist(center2, nose)
+
+    center_eye = (l_eye + r_eye)/2
+    center_mouth = (l_mouth + r_mouth)/2
+    distance_center_eye_mouth =  math.dist(center_eye,center_mouth)
+    distance_nose_ceye = math.dist(center_eye, nose)
+    distance_nose_cmouth = math.dist(center_mouth, nose)
+
+
+
     
-    return distance12, distance_nose1, distance_nose2, l_eye, r_eye
+    return distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, l_eye, r_eye
 
 def euclidean_distance(a, b):
     x1 = a[0]; y1 = a[1]
@@ -375,11 +384,12 @@ def main():
     detector = SCRFD(model_file='./onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
     # img_paths = ['/home/maicg/Documents/python-image-processing/insight-face/tests/data/t4.jpg']
-    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/pexels-cristian-rojas-7535485.mp4')
+    cap = cv2.VideoCapture('E:/python-image-processing/video_gt.avi')
     # cap = cv2.VideoCapture(0)
     k = 0
     while True:
         result, img = cap.read()
+        print("done")
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (640,640))
 
@@ -404,6 +414,8 @@ def main():
             print("======================================")
             # print(kpss.shape)
             # print(kpss)
+        tl = 0
+        tl1 = 0
         for i in range(bboxes.shape[0]):
             bbox = bboxes[i]
             x1,y1,x2,y2,score = bbox.astype(np.int)
@@ -416,16 +428,40 @@ def main():
                 #     # print(len(kps))
                 #     kp = kp.astype(np.int)
                 #     cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
-                distance12, distance_nose1, distance_nose2, l_eye, r_eye = xyz_coordinates(kps)
+                distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, l_eye, r_eye = xyz_coordinates(kps)
+                if (distance_nose1-distance_nose2) <= 0:
+                    print("=====================dt1,dt2",distance_nose1,distance_nose2)
+                    tl = distance_nose1/distance_nose2
+                else: 
+                    print("else=====================dt1,dt2",distance_nose1,distance_nose2)
+                    tl = distance_nose2/distance_nose1
+                
+                if (distance_nose_ceye - distance_nose_cmouth) <= 0:
+                    tl1 = distance_nose_ceye/distance_nose_cmouth
+                else:
+                    tl1 = distance_nose_cmouth/distance_nose_ceye
+
+                print(tl)
                 if distance12 > distance_nose1 and distance12 > distance_nose2:
-                    if abs(distance_nose1-distance_nose2) <= 0.5:
-                        rotate_img = compute_euler(img, l_eye, r_eye)
-                        cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k), rotate_img)
-                        cv2.imwrite('./outputs/test4/frame%s.jpg'%str(k+1), img)
-                        plt.imshow(rotate_img[:,:,::-1])
-                        plt.show()
-                        # print('============================kkkkk',k)
-                        k=k+2
+                    if distance_center_eye_mouth > distance_nose_ceye and distance_center_eye_mouth > distance_nose_cmouth:
+                        if tl >= 0.8 and tl1 >= 0.8:
+                            rotate_img = compute_euler(img, l_eye, r_eye)
+                            # cv2.imwrite('./demo/t4/frame%s.jpg'%str(k), rotate_img)
+                            cv2.imwrite('./demo/cr/frame%s.jpg'%str(k), crop_img)
+                            # plt.imshow(img[:,:,::-1])
+                            # plt.show()
+                            # print('============================kkkkk',k)
+                        else:
+                            cv2.imwrite('./demo/er/frame%s.jpg'%str(k), crop_img)
+                    else:
+                        cv2.imwrite('./demo/rj/frame%s.jpg'%str(k), crop_img)
+                else:
+                    cv2.imwrite('./demo/rj/frame%s.jpg'%str(k), crop_img)
+
+                k=k+1
+
+
+
 
         print('Doneeeee')
 main()
