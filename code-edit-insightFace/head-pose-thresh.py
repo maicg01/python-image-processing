@@ -391,100 +391,108 @@ def main():
     detector = SCRFD(model_file='./onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
     # img_paths = ['/home/maicg/Documents/python-image-processing/insight-face/tests/data/t4.jpg']
-    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/video_59s.avi')
+    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/video_AH.avi')
     # cap = cv2.VideoCapture(0)
     k = 0
-    while True:
-        result, img = cap.read()
-        h = int(img.shape[0])
-        w = int(img.shape[1])
-        area_base = h*w/900
-        print("area===", area_base)
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (640,640))
+    if cap.isOpened():
+        while True:
+            result, img = cap.read()
+            h = int(img.shape[0])
+            w = int(img.shape[1])
+            print(h,w)
+            area_base = h*w/900
+            print("area===", area_base)
+            # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = cv2.resize(img, (640,640))
 
-        for _ in range(1):
-            ta = datetime.datetime.now()
-            bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
-            # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640), max_num=1)
-            # bboxes, kpss = detector.detect(img, 0.5)
-            tb = datetime.datetime.now()
-        #     print('all cost:', (tb-ta).total_seconds()*1000)
-        # print(img_path, bboxes.shape)
-        # print(bboxes.shape)
-        # print(kpss.shape)
-
-        ###code them####
-        # distance12, distance_nose1, distance_nose2 = xyz_coordinates(kpss, bboxes)
-
-
-
-
-        if kpss is not None:
-            print("======================================")
+            for _ in range(1):
+                ta = datetime.datetime.now()
+                bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
+                # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640), max_num=1)
+                # bboxes, kpss = detector.detect(img, 0.5)
+                tb = datetime.datetime.now()
+            #     print('all cost:', (tb-ta).total_seconds()*1000)
+            # print(img_path, bboxes.shape)
+            # print(bboxes.shape)
             # print(kpss.shape)
-            # print(kpss)
-        tl = 0
-        tl1 = 0
-        for i in range(bboxes.shape[0]):
-            bbox = bboxes[i]
-            x1,y1,x2,y2,score = bbox.astype(np.int)
-            # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
-            crop_img = img[y1:y2, x1:x2]
-            # h1, w1 = np.shape(crop_img)
-            h1 = int(crop_img.shape[0])
-            w1 = int(crop_img.shape[1])
-            area_crop = h1*w1
+
+            ###code them####
+            # distance12, distance_nose1, distance_nose2 = xyz_coordinates(kpss, bboxes)
+
+
+
+
             if kpss is not None:
-                kps = kpss[i]
-                # print(kps.shape)
-                # for kp in kps:
-                #     # print(len(kps))
-                #     kp = kp.astype(np.int)
-                #     cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
-                distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye = xyz_coordinates(kps)
-                if (distance_nose1-distance_nose2) <= 0:
-                    print("=====================dt1,dt2",distance_nose1,distance_nose2)
-                    tl = distance_nose1/distance_nose2
-                else: 
-                    print("else=====================dt1,dt2",distance_nose1,distance_nose2)
-                    tl = distance_nose2/distance_nose1
-                
-                if (distance_nose_ceye - distance_nose_cmouth) <= 0:
-                    tl1 = distance_nose_ceye/distance_nose_cmouth
-                else:
-                    tl1 = distance_nose_cmouth/distance_nose_ceye
+                print("======================================")
+                # print(kpss.shape)
+                # print(kpss)
+            tl = 0
+            tl1 = 0
+            for i in range(bboxes.shape[0]):
+                bbox = bboxes[i]
+                x1,y1,x2,y2,score = bbox.astype(np.int)
+                # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+                crop_img = img[y1:y2, x1:x2]
+                # h1, w1 = np.shape(crop_img)
+                h1 = int(crop_img.shape[0])
+                w1 = int(crop_img.shape[1])
+                area_crop = h1*w1
+                if kpss is not None:
+                    kps = kpss[i]
+                    # print(kps.shape)
+                    # for kp in kps:
+                    #     # print(len(kps))
+                    #     kp = kp.astype(np.int)
+                    #     cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
+                    distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye = xyz_coordinates(kps)
+                    if (distance_nose1-distance_nose2) <= 0:
+                        print("=====================dt1,dt2",distance_nose1,distance_nose2)
+                        tl = distance_nose1/distance_nose2
+                    else: 
+                        print("else=====================dt1,dt2",distance_nose1,distance_nose2)
+                        tl = distance_nose2/distance_nose1
+                    
+                    if (distance_nose_ceye - distance_nose_cmouth) <= 0:
+                        tl1 = distance_nose_ceye/distance_nose_cmouth
+                    else:
+                        tl1 = distance_nose_cmouth/distance_nose_ceye
 
-                print(tl)
+                    print(tl)
 
-                if area_crop < area_base:
-                    print('=======area_crop', area_crop)
-                    cv2.imwrite('./demo/rj1/frame{0}_nho.jpg'.format(k), crop_img)
-                else:
-                    if distance12 >= distance_nose1 and distance12 >= distance_nose2:
-                        if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
-                            if tl >= 0.8 and tl1 >= 0.8:
-                                rotate_img = compute_euler(img, l_eye, r_eye)
-                                # cv2.imwrite('./demo/t4/frame%s.jpg'%str(k), rotate_img)
-                                cv2.imwrite('./demo/cr1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
-                                # plt.imshow(img[:,:,::-1])
-                                # plt.show()
-                                # print('============================kkkkk',k)
-                            else:
-                                cv2.imwrite('./demo/er1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                    if area_crop < area_base:
+                        # print(x1,y1,x2,y2)
+                        # print(crop_img.shape)
+                        print('=======area_crop', area_crop)
+                        if area_crop == 0:
+                            break
                         else:
-                            if distance_eye/h1 > 0.15:
+                            cv2.imwrite('./demo/rj1/frame{0}_nho.jpg'.format(k), crop_img)
+                    else:
+                        if distance12 >= distance_nose1 and distance12 >= distance_nose2:
+                            if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
+                                if tl >= 0.75 and tl1 >= 0.75:
+                                    rotate_img = compute_euler(img, l_eye, r_eye)
+                                    # cv2.imwrite('./demo/t4/frame%s.jpg'%str(k), rotate_img)
+                                    cv2.imwrite('./demo/cr1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                                    # plt.imshow(img[:,:,::-1])
+                                    # plt.show()
+                                    # print('============================kkkkk',k)
+                                else:
+                                    cv2.imwrite('./demo/er1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                            else:
+                                if distance_eye/w1 > 0.15:
+                                    cv2.imwrite('./demo/rj_l/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                                else:
+                                    cv2.imwrite('./demo/rj1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                        else:
+                            if distance_eye/w1 > 0.15:
                                 cv2.imwrite('./demo/rj_l/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
                             else:
                                 cv2.imwrite('./demo/rj1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
-                    else:
-                        if distance_eye/h1 > 0.15:
-                            cv2.imwrite('./demo/rj_l/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
-                        else:
-                            cv2.imwrite('./demo/rj1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
 
-                k=k+1
-
-
-        print('Doneeeee')
+                    k=k+1
+                    print('Doneeeee')
+        cap.release()
+    cv2.destroyAllWindows()
+   
 main()
