@@ -391,25 +391,28 @@ def main():
     detector = SCRFD(model_file='./onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
     # img_paths = ['/home/maicg/Documents/python-image-processing/insight-face/tests/data/t4.jpg']
-    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/video_AH.avi')
+    cap = cv2.VideoCapture('rtsp://ai_dev:123654789@@@192.168.15.10:554/Streaming/Channels/1601')
     # cap = cv2.VideoCapture(0)
     k = 0
     if cap.isOpened():
         while True:
-            result, img = cap.read()
+            for i in range(5):
+                result, img = cap.read()
+            # cv2.imshow('ImageWindow', img)
+            # cv2.waitKey()
             h = int(img.shape[0])
             w = int(img.shape[1])
             print(h,w)
-            area_base = h*w/900
+            area_base = h*w
             print("area===", area_base)
             # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = cv2.resize(img, (640,640))
+            # img = cv2.resize(img, (640,640))
 
             for _ in range(1):
                 ta = datetime.datetime.now()
-                bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
+                # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
                 # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640), max_num=1)
-                # bboxes, kpss = detector.detect(img, 0.5)
+                bboxes, kpss = detector.detect(img, 0.5)
                 tb = datetime.datetime.now()
             #     print('all cost:', (tb-ta).total_seconds()*1000)
             # print(img_path, bboxes.shape)
@@ -431,6 +434,7 @@ def main():
             for i in range(bboxes.shape[0]):
                 bbox = bboxes[i]
                 x1,y1,x2,y2,score = bbox.astype(np.int)
+                print("==================score", score)
                 # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
                 crop_img = img[y1:y2, x1:x2]
                 # h1, w1 = np.shape(crop_img)
@@ -459,36 +463,37 @@ def main():
 
                     print(tl)
 
-                    if area_crop < area_base:
+                    if (area_base/area_crop) > ((1080*1920)/(64*64)):
                         # print(x1,y1,x2,y2)
                         # print(crop_img.shape)
                         print('=======area_crop', area_crop)
                         if area_crop == 0:
                             break
                         else:
-                            cv2.imwrite('./demo/rj1/frame{0}_nho.jpg'.format(k), crop_img)
+                            cv2.imwrite('./demo2/rj1/frame{0}_nho.jpg'.format(k), crop_img)
+                            print("hinh nho")
                     else:
                         if distance12 >= distance_nose1 and distance12 >= distance_nose2:
                             if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
                                 if tl >= 0.75 and tl1 >= 0.75:
                                     rotate_img = compute_euler(img, l_eye, r_eye)
                                     # cv2.imwrite('./demo/t4/frame%s.jpg'%str(k), rotate_img)
-                                    cv2.imwrite('./demo/cr1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                                    cv2.imwrite('./demo2/cr1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                                     # plt.imshow(img[:,:,::-1])
                                     # plt.show()
                                     # print('============================kkkkk',k)
                                 else:
-                                    cv2.imwrite('./demo/er1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                                    cv2.imwrite('./demo2/er1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                             else:
                                 if distance_eye/w1 > 0.15:
-                                    cv2.imwrite('./demo/rj_l/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                                    cv2.imwrite('./demo2/rj_l/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                                 else:
-                                    cv2.imwrite('./demo/rj1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                                    cv2.imwrite('./demo2/rj1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                         else:
                             if distance_eye/w1 > 0.15:
-                                cv2.imwrite('./demo/rj_l/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                                cv2.imwrite('./demo2/rj_l/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                             else:
-                                cv2.imwrite('./demo/rj1/frame{0}_{1}_{2}.jpg'.format(k, round(tl, 2), round(tl1, 2)), crop_img)
+                                cv2.imwrite('./demo2/rj1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
 
                     k=k+1
                     print('Doneeeee')
