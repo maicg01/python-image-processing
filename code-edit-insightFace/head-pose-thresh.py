@@ -463,19 +463,18 @@ def main():
 
                     print(tl)
 
-                    if (area_base/area_crop) > ((1080*1920)/(64*64)):
+
+                    if area_crop == 0:
+                        break
+                    elif (area_base/area_crop) > ((1080*1920)/(64*64)):
                         # print(x1,y1,x2,y2)
                         # print(crop_img.shape)
-                        print('=======area_crop', area_crop)
-                        if area_crop == 0:
-                            break
-                        else:
-                            cv2.imwrite('./demo2/rj1/frame{0}_nho.jpg'.format(k), crop_img)
-                            print("hinh nho")
+                        cv2.imwrite('./demo2/rj1/frame{0}_nho.jpg'.format(k), crop_img)
+                        print("hinh nho")
                     else:
                         if distance12 >= distance_nose1 and distance12 >= distance_nose2:
                             if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
-                                if tl >= 0.75 and tl1 >= 0.75:
+                                if tl >= 0.6 and tl1 >= 0.6:
                                     rotate_img = compute_euler(img, l_eye, r_eye)
                                     # cv2.imwrite('./demo/t4/frame%s.jpg'%str(k), rotate_img)
                                     cv2.imwrite('./demo2/cr1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
