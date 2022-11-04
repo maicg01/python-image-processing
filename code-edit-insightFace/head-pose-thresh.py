@@ -412,7 +412,7 @@ def main():
                 ta = datetime.datetime.now()
                 # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
                 # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640), max_num=1)
-                bboxes, kpss = detector.detect(img, 0.5)
+                bboxes, kpss = detector.detect(img, 0.65)
                 tb = datetime.datetime.now()
             #     print('all cost:', (tb-ta).total_seconds()*1000)
             # print(img_path, bboxes.shape)
@@ -433,7 +433,8 @@ def main():
             tl1 = 0
             for i in range(bboxes.shape[0]):
                 bbox = bboxes[i]
-                x1,y1,x2,y2,score = bbox.astype(np.int)
+                x1,y1,x2,y2,_ = bbox.astype(np.int)
+                _,_,_,_,score = bbox.astype(np.float)
                 print("==================score", score)
                 # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
                 crop_img = img[y1:y2, x1:x2]
@@ -469,7 +470,7 @@ def main():
                     elif (area_base/area_crop) > ((1080*1920)/(64*64)):
                         # print(x1,y1,x2,y2)
                         # print(crop_img.shape)
-                        cv2.imwrite('./demo2/rj1/frame{0}_nho.jpg'.format(k), crop_img)
+                        # cv2.imwrite('./demo2/rj1/frame{0}_nho.jpg'.format(k), crop_img)
                         print("hinh nho")
                     else:
                         if distance12 >= distance_nose1 and distance12 >= distance_nose2:
@@ -477,22 +478,22 @@ def main():
                                 if tl >= 0.6 and tl1 >= 0.6:
                                     rotate_img = compute_euler(img, l_eye, r_eye)
                                     # cv2.imwrite('./demo/t4/frame%s.jpg'%str(k), rotate_img)
-                                    cv2.imwrite('./demo2/cr1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+                                    cv2.imwrite('./demo2/cr2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                                     # plt.imshow(img[:,:,::-1])
                                     # plt.show()
                                     # print('============================kkkkk',k)
                                 else:
-                                    cv2.imwrite('./demo2/er1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+                                    cv2.imwrite('./demo2/er2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                             else:
                                 if distance_eye/w1 > 0.15:
-                                    cv2.imwrite('./demo2/rj_l/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+                                    cv2.imwrite('./demo2/rj_l2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                                 else:
-                                    cv2.imwrite('./demo2/rj1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+                                    cv2.imwrite('./demo2/rj2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                         else:
                             if distance_eye/w1 > 0.15:
-                                cv2.imwrite('./demo2/rj_l/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+                                cv2.imwrite('./demo2/rj_l2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
                             else:
-                                cv2.imwrite('./demo2/rj1/frame{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+                                cv2.imwrite('./demo2/rj2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
 
                     k=k+1
                     print('Doneeeee')
