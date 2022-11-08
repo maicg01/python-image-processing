@@ -16,7 +16,7 @@ from facenet_pytorch import MTCNN, InceptionResnetV1
 import torch
 from torchvision import transforms
 from PIL import Image
-
+import time
 
 def computeCosin(img1, img2):
     resnet = InceptionResnetV1(pretrained='vggface2').eval()
@@ -33,12 +33,12 @@ def computeCosin(img1, img2):
     # Calculate embedding (unsqueeze to add batch dimension)
     img_embedding = resnet(img1.unsqueeze(0))
     # print(img_embedding)
-    print(img_embedding.size())
+    # print(img_embedding.size())
 
     # Calculate embedding (unsqueeze to add batch dimension)
     img_embedding2 = resnet(img2.unsqueeze(0))
     # print(img_embedding2)
-    print(img_embedding2.size())
+    # print(img_embedding2.size())
 
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
     output = cos(img_embedding, img_embedding2)
@@ -67,20 +67,20 @@ def alignment(img, l_eye, r_eye):
     else:
         point_3rd = (left_eye_x, right_eye_y)
         direction = 1 #rotate inverse direction of clock
-        print("rotate to inverse clock direction")
+        # print("rotate to inverse clock direction")
 
     a = euclidean_distance(l_eye, point_3rd)
     b = euclidean_distance(r_eye, l_eye)
     c = euclidean_distance(r_eye, point_3rd)
 
     cos_a = (b*b + c*c - a*a)/(2*b*c)
-    print("cos(a) = ", cos_a)
+    # print("cos(a) = ", cos_a)
     
     angle = np.arccos(cos_a)
-    print("angle: ", angle," in radian")
+    # print("angle: ", angle," in radian")
     
     angle = (angle * 180) / math.pi
-    print("angle: ", angle," in degree")
+    # print("angle: ", angle," in degree")
 
     if direction == -1:
         angle = 90 - angle
@@ -236,20 +236,6 @@ class SCRFD:
             if key in self.center_cache:
                 anchor_centers = self.center_cache[key]
             else:
-                #solution-1, c style:
-                #anchor_centers = np.zeros( (height, width, 2), dtype=np.float32 )
-                #for i in range(height):
-                #    anchor_centers[i, :, 1] = i
-                #for i in range(width):
-                #    anchor_centers[:, i, 0] = i
-
-                #solution-2:
-                #ax = np.arange(width, dtype=np.float32)
-                #ay = np.arange(height, dtype=np.float32)
-                #xv, yv = np.meshgrid(np.arange(width), np.arange(height))
-                #anchor_centers = np.stack([xv, yv], axis=-1).astype(np.float32)
-
-                #solution-3:
                 anchor_centers = np.stack(np.mgrid[:height, :width][::-1], axis=-1).astype(np.float32)
                 #print(anchor_centers.shape)
 
@@ -414,34 +400,62 @@ def process_image(img_paths):
             # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640))
             bboxes, kpss = detector.detect(img, 0.5)
             tb = datetime.datetime.now()
-            print('all cost:', (tb-ta).total_seconds()*1000)
-        print(img_path, bboxes.shape)
+            # print('all cost:', (tb-ta).total_seconds()*1000)
+        # print(img_path, bboxes.shape)
         if kpss is not None:
             print(kpss.shape)
         for i in range(bboxes.shape[0]):
             bbox = bboxes[i]
             x1,y1,x2,y2,score = bbox.astype(np.int)
-            cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+            # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
             crop_img = img[y1:y2, x1:x2]
             if kpss is not None:
                 kps = kpss[i]
                 distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye = xyz_coordinates(kps)
                 rotate_img = alignment(crop_img, l_eye, r_eye)
-                print("doneee")  
+                # plt.imshow(rotate_img[:,:,::-1])
+                # plt.show()
+                # print("doneee")  
             else:
                 print("error") 
 
     return rotate_img
 
-def main():
-    img1 = ['/home/maicg/Documents/python-image-processing/angelina.jpg']
-    img2 = ['/home/maicg/Documents/python-image-processing/img2.jpg']
-
+def compare_image(img1, img2):
     image1 = process_image(img1)
     image2 = process_image(img2)
 
     results = computeCosin(image1,image2)
-    print("KQ run: ", results)
+    # print("==========KQ run: ", results)
+    return results
+
+def main():
+    # img1 = ['/home/maicg/Documents/python-image-processing/angelina.jpg']
+    # img2 = ['/home/maicg/Documents/python-image-processing/img2.jpg']
+    # img3 = ['/home/maicg/Documents/python-image-processing/img3.jpg']
+    # img4 = ['/home/maicg/Documents/python-image-processing/img4.jpg']
+
+    # compare_image(img1, img2)
+    # compare_image(img1, img3)
+    # compare_image(img1, img4)
+    path = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/demo2/test-facenet'
+    img1 = ['/home/maicg/Documents/python-image-processing/sample.jpg']
+    count = 0
+    avr_time = 0
+
+    time_start = time.time()
+    for img in os.listdir(path):
+        pathName = [os.path.join(path,img)]
+        # print('done')
+        result = compare_image(img1, pathName)
+        print(result)
+        count = count + 1
+
+    time_end = time.time()
+    avr_time = round(((time_end-time_start)/count), 2)
+    print(avr_time)
+
+
 
 
 # video
