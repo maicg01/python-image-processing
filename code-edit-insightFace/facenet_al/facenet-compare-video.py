@@ -147,7 +147,7 @@ class SCRFD:
         if self.session is None:
             assert self.model_file is not None
             assert osp.exists(self.model_file)
-            self.session = onnxruntime.InferenceSession(self.model_file, providers=['CUDAExecutionProvider'])
+            self.session = onnxruntime.InferenceSession(self.model_file, None)
         self.center_cache = {}
         self.nms_thresh = 0.4
         self._init_vars()
@@ -190,8 +190,8 @@ class SCRFD:
             self.use_kps = True
 
     def prepare(self, ctx_id, **kwargs):
-        # if ctx_id<0:
-        #     self.session.set_providers(['CPUExecutionProvider'])
+        if ctx_id<0:
+            self.session.set_providers(['CPUExecutionProvider'])
         nms_thresh = kwargs.get('nms_thresh', None)
         if nms_thresh is not None:
             self.nms_thresh = nms_thresh
@@ -385,195 +385,168 @@ def xyz_coordinates(kps):
 
     return distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye
 
-# image
-def process_image(img_paths):
+def process_image(img):
+    remember = 0
+    rotate_img = 0
     import glob
     #detector = SCRFD(model_file='./det.onnx')
+    # detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_500m.onnx')
+    # detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_34g.onnx')
     detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/code-edit-insightFace/onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
-    # img_paths = ['/home/maicg/Documents/python-image-processing/person.jpg']
-    for img_path in img_paths:
-        img = cv2.imread(img_path)
+    
+    h, w, c = img.shape
+    # h = int(img.shape[0])
+    # w = int(img.shape[1])
+    # print(h,w)
+    area_base = h*w
+    # print("area===", area_base)
+    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # img = cv2.resize(img, (640,640))
 
-        for _ in range(1):
-            ta = datetime.datetime.now()
-            # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640))
-            bboxes, kpss = detector.detect(img, 0.5)
-            tb = datetime.datetime.now()
-            # print('all cost:', (tb-ta).total_seconds()*1000)
-        # print(img_path, bboxes.shape)
+    for _ in range(1):
+        ta = datetime.datetime.now()
+        # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
+        # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640), max_num=1)
+        bboxes, kpss = detector.detect(img, 0.65)
+        tb = datetime.datetime.now()
+    if kpss is not None:
+        print("======================================")
+        # print(kpss.shape)
+        # print(kpss)
+    tl = 0
+    tl1 = 0
+    for i in range(bboxes.shape[0]):
+        bbox = bboxes[i]
+        x1,y1,x2,y2,_ = bbox.astype(np.int)
+        _,_,_,_,score = bbox.astype(np.float)
+        # print("==================score", score)
+        # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+        crop_img = img[y1:y2, x1:x2]
+        # h1, w1 = np.shape(crop_img)
+        h1 = int(crop_img.shape[0])
+        w1 = int(crop_img.shape[1])
+        area_crop = h1*w1
         if kpss is not None:
-            print(kpss.shape)
-        for i in range(bboxes.shape[0]):
-            bbox = bboxes[i]
-            x1,y1,x2,y2,score = bbox.astype(np.int)
-            # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
-            crop_img = img[y1:y2, x1:x2]
-            if kpss is not None:
-                kps = kpss[i]
-                distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye = xyz_coordinates(kps)
-                rotate_img = alignment(crop_img, l_eye, r_eye)
-                # plt.imshow(rotate_img[:,:,::-1])
-                # plt.show()
-                # print("doneee")  
+            kps = kpss[i]
+            distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye = xyz_coordinates(kps)
+            if (distance_nose1-distance_nose2) <= 0:
+                # print("=====================dt1,dt2",distance_nose1,distance_nose2)
+                tl = distance_nose1/distance_nose2
+            else: 
+                # print("else=====================dt1,dt2",distance_nose1,distance_nose2)
+                tl = distance_nose2/distance_nose1
+            
+            if (distance_nose_ceye - distance_nose_cmouth) <= 0:
+                tl1 = distance_nose_ceye/distance_nose_cmouth
             else:
-                print("error") 
+                tl1 = distance_nose_cmouth/distance_nose_ceye
 
-    return rotate_img
+            # print(tl)
 
-def compare_image(img1, img2):
-    image1 = process_image(img1)
-    image2 = process_image(img2)
 
-    results = computeCosin(image1,image2)
-    # print("==========KQ run: ", results)
-    return results
+            if area_crop == 0:
+                break
+            elif (area_base/area_crop) > ((1080*1920)/(64*64)):
+                print("hinh nho")
+            else:
+                if distance12 >= distance_nose1 and distance12 >= distance_nose2:
+                    if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
+                        # if tl >= 0.6 and tl1 >= 0.6:
+                            remember=1
+                            rotate_img = alignment(crop_img, l_eye, r_eye)
+                            # cv2.imwrite('./demo2/cr2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+                            # plt.imshow(rotate_img[:,:,::-1])
+                            # plt.show()
+    return rotate_img, remember
+                        # else:
+                        #     rotate_img = alignment(img, l_eye, r_eye)
+                        #     # cv2.imwrite('./demo2/er2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+        
+
+# def compare_image(img1, img2):
+#     image1 = process_image(img1)
+#     image2 = process_image(img2)
+
+#     results = computeCosin(image1,image2)
+#     # print("==========KQ run: ", results)
+#     return results
 
 def main():
-    # img1 = ['/home/maicg/Documents/python-image-processing/angelina.jpg']
-    # img2 = ['/home/maicg/Documents/python-image-processing/img2.jpg']
-    # img3 = ['/home/maicg/Documents/python-image-processing/img3.jpg']
-    # img4 = ['/home/maicg/Documents/python-image-processing/img4.jpg']
+    cam_port=1
+    # cap = cv2.VideoCapture(cam_port)
+    cap = cv2.VideoCapture('rtsp://ai_dev:123654789@@@192.168.15.10:554/Streaming/Channels/1601')
+    
+    path = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/dataExper/dataDemo'
+    path_dir = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/dataExper/dataTest'
+    k=0
+    if cap.isOpened():
+        while True:
+            for i in range(20):
+                result, img = cap.read()
+            for i in range(4):
+                result, img = cap.read()
+            # plt.imshow(img[:,:,::-1])
+            # plt.show()
+            img_detect, remember = process_image(img)
+            count = 0
+            avr_time = 0
+            time_start = time.time()
+            predict=[]
+            label = []
+            if remember == 1:
+                for image in os.listdir(path):
+                    pathName = [os.path.join(path,image)]
+                    for pathtest in pathName:
+                        img2 = cv2.imread(pathtest)
+                        img_origin, remember1 = process_image(img2)
+                        # print('done')
+                        result = computeCosin(img_origin, img_detect)
+                        print("===============", result)
+                        predict.append(result.item())
+                        label.append(pathtest)
+                        count = count + 1
+                print('ket qua cuoi cung', max(predict))
+                if max(predict) >= 0.65:
+                    # print("vi tri anr: ", label[predict.index(max(predict))])
+                    path_img = label[predict.index(max(predict))]
+                    path_img = path_img[-16:-4]
+                    print(path_img)
+                    index_label = path_img.find("/")
+                    directory = path_img[index_label+1:]
+                    print(directory)
+                    try:
+                        dir_fold = os.path.join(path_dir, directory)
+                        os.makedirs(dir_fold, exist_ok = True)
+                        frame_img_path = dir_fold + '/frame' + str(k) + '.jpg'
+                        print(frame_img_path)
+                        cv2.imwrite(frame_img_path, img_detect)
+                        print("Directory created successfully")
+                        k=k+1
+                    except OSError as error:
+                        print("Directory can not be created")
+                else:
+                    print("unknow")
+                    try:
+                        dir_fold = os.path.join(path_dir, 'unknow')
+                        os.makedirs(dir_fold, exist_ok = True)
+                        frame_img_path = dir_fold + '/frame' + str(k) + '.jpg'
+                        print(frame_img_path)
+                        cv2.imwrite(frame_img_path, img_detect)
+                        k=k+1
+                    except OSError as error:
+                        print("Directory can not be created")
+                
+                
+                time_end = time.time()
+                avr_time = round(((time_end-time_start)/count), 2)
+            
+                print(avr_time)
+                # print('Doneeeee')
+        cap.release()
+    cv2.destroyAllWindows()
 
-    # compare_image(img1, img2)
-    # compare_image(img1, img3)
-    # compare_image(img1, img4)
-    path = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/demo2/test-facenet'
-    img1 = ['/home/maicg/Documents/python-image-processing/sample.jpg']
-    count = 0
-    avr_time = 0
-
-    time_start = time.time()
-    for img in os.listdir(path):
-        pathName = [os.path.join(path,img)]
-        # print('done')
-        result = compare_image(img1, pathName)
-        print(result)
-        count = count + 1
-
-    time_end = time.time()
-    avr_time = round(((time_end-time_start)/count), 2)
-    print(avr_time)
-
-
-
-
-# video
-# def main():
-#     import glob
-#     #detector = SCRFD(model_file='./det.onnx')
-#     # detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_500m.onnx')
-#     # detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_34g.onnx')
-#     detector = SCRFD(model_file='./onnx/scrfd_2.5g_bnkps.onnx')
-#     detector.prepare(-1)
-#     # img_paths = ['/home/maicg/Documents/python-image-processing/insight-face/tests/data/t4.jpg']
-#     cap = cv2.VideoCapture('rtsp://ai_dev:123654789@@@192.168.15.10:554/Streaming/Channels/1601')
-#     # cap = cv2.VideoCapture(0)
-#     k = 0
-#     if cap.isOpened():
-#         while True:
-#             for i in range(5):
-#                 result, img = cap.read()
-#             # cv2.imshow('ImageWindow', img)
-#             # cv2.waitKey()
-#             h = int(img.shape[0])
-#             w = int(img.shape[1])
-#             print(h,w)
-#             area_base = h*w
-#             print("area===", area_base)
-#             # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-#             # img = cv2.resize(img, (640,640))
-
-#             for _ in range(1):
-#                 ta = datetime.datetime.now()
-#                 # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
-#                 # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640), max_num=1)
-#                 bboxes, kpss = detector.detect(img, 0.65)
-#                 tb = datetime.datetime.now()
-#             #     print('all cost:', (tb-ta).total_seconds()*1000)
-#             # print(img_path, bboxes.shape)
-#             # print(bboxes.shape)
-#             # print(kpss.shape)
-
-#             ###code them####
-#             # distance12, distance_nose1, distance_nose2 = xyz_coordinates(kpss, bboxes)
-
-
-
-
-#             if kpss is not None:
-#                 print("======================================")
-#                 # print(kpss.shape)
-#                 # print(kpss)
-#             tl = 0
-#             tl1 = 0
-#             for i in range(bboxes.shape[0]):
-#                 bbox = bboxes[i]
-#                 x1,y1,x2,y2,_ = bbox.astype(np.int)
-#                 _,_,_,_,score = bbox.astype(np.float)
-#                 print("==================score", score)
-#                 # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
-#                 crop_img = img[y1:y2, x1:x2]
-#                 # h1, w1 = np.shape(crop_img)
-#                 h1 = int(crop_img.shape[0])
-#                 w1 = int(crop_img.shape[1])
-#                 area_crop = h1*w1
-#                 if kpss is not None:
-#                     kps = kpss[i]
-#                     # print(kps.shape)
-#                     # for kp in kps:
-#                     #     # print(len(kps))
-#                     #     kp = kp.astype(np.int)
-#                     #     cv2.circle(img, tuple(kp) , 1, (0,0,255) , 2)
-#                     distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye = xyz_coordinates(kps)
-#                     if (distance_nose1-distance_nose2) <= 0:
-#                         print("=====================dt1,dt2",distance_nose1,distance_nose2)
-#                         tl = distance_nose1/distance_nose2
-#                     else: 
-#                         print("else=====================dt1,dt2",distance_nose1,distance_nose2)
-#                         tl = distance_nose2/distance_nose1
-                    
-#                     if (distance_nose_ceye - distance_nose_cmouth) <= 0:
-#                         tl1 = distance_nose_ceye/distance_nose_cmouth
-#                     else:
-#                         tl1 = distance_nose_cmouth/distance_nose_ceye
-
-#                     print(tl)
-
-
-#                     if area_crop == 0:
-#                         break
-#                     elif (area_base/area_crop) > ((1080*1920)/(64*64)):
-#                         # print(x1,y1,x2,y2)
-#                         # print(crop_img.shape)
-#                         # cv2.imwrite('./demo2/rj1/frame{0}_nho.jpg'.format(k), crop_img)
-#                         print("hinh nho")
-#                     else:
-#                         if distance12 >= distance_nose1 and distance12 >= distance_nose2:
-#                             if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
-#                                 if tl >= 0.6 and tl1 >= 0.6:
-#                                     rotate_img = compute_euler(img, l_eye, r_eye)
-#                                     # cv2.imwrite('./demo/t4/frame%s.jpg'%str(k), rotate_img)
-#                                     cv2.imwrite('./demo2/cr2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
-#                                     # plt.imshow(img[:,:,::-1])
-#                                     # plt.show()
-#                                     # print('============================kkkkk',k)
-#                                 else:
-#                                     cv2.imwrite('./demo2/er2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
-#                             else:
-#                                 if distance_eye/w1 > 0.15:
-#                                     cv2.imwrite('./demo2/rj_l2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
-#                                 else:
-#                                     cv2.imwrite('./demo2/rj2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
-#                         else:
-#                             if distance_eye/w1 > 0.15:
-#                                 cv2.imwrite('./demo2/rj_l2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
-#                             else:
-#                                 cv2.imwrite('./demo2/rj2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
-
-#                     k=k+1
-#                     print('Doneeeee')
-#         cap.release()
-#     cv2.destroyAllWindows()
-   
 main()
+
+
+

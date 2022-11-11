@@ -1,10 +1,11 @@
-from facenet_pytorch import MTCNN, InceptionResnetV1
+from facenet_pytorch import MTCNN
 import torch 
 from torchvision import transforms
 import math
 import cv2
 import time
 import os
+from inceptionResnetV1 import InceptionResnetV1
 
 # time_start = time.time()
 # # If required, create a face detection pipeline using MTCNN:
@@ -134,7 +135,9 @@ import os
 
 
 def computeCosin(img1, img2):
-    mtcnn = MTCNN(image_size=160, margin=0)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    mtcnn = MTCNN(image_size=160, margin=0, device=device)
 
     # Create an inception resnet (in eval mode):
     resnet = InceptionResnetV1(pretrained='vggface2').eval()
@@ -176,6 +179,8 @@ def main():
     # compare_image(img1, img2)
     # compare_image(img1, img3)
     # compare_image(img1, img4)
+    
+
     path = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/demo2/test-facenet'
     img1 = cv2.imread('/home/maicg/Documents/python-image-processing/sample.jpg')
     count = 0
