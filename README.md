@@ -1,5 +1,5 @@
 ﻿# python-image-processing
- # NOTE chay srcrd cua insightFace
+ # NOTE chay scrfd cua insightFace
 ha version pytorch
 
 link https://pytorch.org/get-started/previous-versions/
