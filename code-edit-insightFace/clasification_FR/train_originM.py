@@ -4,32 +4,41 @@ from sklearn import neighbors
 import pickle
 import cv2
 
-from facenet_preditctM import process_image, computeEmb
+from facenetPreditctFunction import process_image, computeEmb, fixed_image_standardization
 
 pathkk =  '/home/maicg/Documents/python-image-processing/code-edit-insightFace/dataExper/dataDemo'
 
-def train(train_dir, path_save_model):
+def train(train_dir):
     X=[]
     y=[]
     #lap tung anh trong co so du lieu
     for image in os.listdir(train_dir):
-        pathName = [os.path.join(train_dir,image)]
-        for pathtest in pathName:
-            img2 = cv2.imread(pathtest)
-            img_origin, remember1 = process_image(img2)
-            emb = computeEmb(img_origin)
-            # print('done')
-            path_img = pathtest[-16:-4]
-            # print(path_img)
-            index_label = path_img.find("/")
-            directory = path_img[index_label+1:]
-            print(directory)
+        pathName = os.path.join(train_dir,image)
 
-            X.append(emb)
-            y.append(directory)
-            # count = count + 1 
+        img2 = cv2.imread(pathName)
+        img_origin, remember1 = process_image(img2)
+        emb = computeEmb(img_origin)
+        emb = fixed_image_standardization(emb)
+        print(emb)
+        # print(path_img)
+        index_label = image.find(".")
+        directory = image[:index_label]
+        print(directory)
+
+        X.append(emb)
+        y.append(directory)
+        # count = count + 1 
     print(X)
     print(y)  
+    return X, y
 
-train(train_dir=pathkk)
+# with open('x', 'rb'):
+#     pickle.dump()
+X, y = train(train_dir=pathkk)
+
+with open('X.pkl', 'wb') as f:
+    pickle.dump(X, f)  
+
+with open('y.pkl', 'wb') as f:
+    pickle.dump(y, f) 
 

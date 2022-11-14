@@ -32,30 +32,10 @@ def computeEmb(img1):
     return img_embedding
 
 
-def computeCosin(img1, img2):
-    resnet = InceptionResnetV1(pretrained='vggface2').eval()
-    convert_tensor = transforms.ToTensor()
-    # convert_tensor = transforms.Compose([
-    #     transforms.ToTensor()
-    # ])
-    img1= cv2.resize(img1, (160,160))
-    img2= cv2.resize(img2, (160,160))
-    img1=convert_tensor(img1)
-    img2=convert_tensor(img2)
-    # img1=fixed_image_standardization(img1)
-    # img2=fixed_image_standardization(img2)
-    # Calculate embedding (unsqueeze to add batch dimension)
-    img_embedding = resnet(img1.unsqueeze(0))
-    # print(img_embedding)
-    # print(img_embedding.size())
-
-    # Calculate embedding (unsqueeze to add batch dimension)
-    img_embedding2 = resnet(img2.unsqueeze(0))
-    # print(img_embedding2)
-    # print(img_embedding2.size())
-
+def computeCosin(emb1, img2):
+    emb2 = computeEmb(img2)
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    output = cos(img_embedding, img_embedding2)
+    output = cos(emb1, emb2)
     # print("goc ti le giua anh 1 va 2: ", output)
     return output
 
@@ -477,6 +457,11 @@ def process_image(img):
                         #     rotate_img = alignment(img, l_eye, r_eye)
                         #     # cv2.imwrite('./demo2/er2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
         
+def fixed_image_standardization(image_tensor):
+    processed_tensor = (image_tensor - 127.5) / 128.0
+    return processed_tensor
+
+
 
 # def compare_image(img1, img2):
 #     image1 = process_image(img1)
