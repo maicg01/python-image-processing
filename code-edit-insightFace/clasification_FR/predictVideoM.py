@@ -39,7 +39,6 @@ def main():
                 time_start = time.time()
                 for embOrigin in imageOriginSet:
                     # print('done')
-                    embOrigin = fixed_image_standardization(embOrigin)
                     result = computeCosin(embOrigin, img_detect)
                     print("===============", result)
                     predict.append(result.item())
@@ -53,7 +52,7 @@ def main():
                     try:
                         dir_fold = os.path.join(path_dir, directory)
                         os.makedirs(dir_fold, exist_ok = True)
-                        frame_img_path = dir_fold + '/frame' + str(k) + '.jpg'
+                        frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(max(predict), 2))  + '.jpg'
                         print(frame_img_path)
                         cv2.imwrite(frame_img_path, img_detect)
                         print("Directory created successfully")
@@ -65,7 +64,7 @@ def main():
                     try:
                         dir_fold = os.path.join(path_dir, 'unknow')
                         os.makedirs(dir_fold, exist_ok = True)
-                        frame_img_path = dir_fold + '/frame' + str(k) + '.jpg'
+                        frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(max(predict), 2))  + '.jpg'
                         print(frame_img_path)
                         cv2.imwrite(frame_img_path, img_detect)
                         k=k+1

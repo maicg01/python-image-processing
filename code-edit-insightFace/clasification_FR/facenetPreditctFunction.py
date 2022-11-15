@@ -17,27 +17,17 @@ import torch
 from torchvision import transforms
 from PIL import Image
 import time
+from numpy import asarray
+from numpy import expand_dims
 
 
-def computeEmb(img1):
-    resnet = InceptionResnetV1(pretrained='vggface2').eval()
-    convert_tensor = transforms.ToTensor()
-    # convert_tensor = transforms.Compose([
-    #     transforms.ToTensor()
-    # ])
-    img1= cv2.resize(img1, (160,160))
-    img1=convert_tensor(img1)
 
-    img_embedding = resnet(img1.unsqueeze(0))
-    return img_embedding
-
-
-def computeCosin(emb1, img2):
-    emb2 = computeEmb(img2)
-    cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    output = cos(emb1, emb2)
-    # print("goc ti le giua anh 1 va 2: ", output)
-    return output
+# def computeCosin(emb1, img2):
+#     emb2 = computeEmb(img2)
+#     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+#     output = cos(emb1, emb2)
+#     # print("goc ti le giua anh 1 va 2: ", output)
+#     return output
 
 def euclidean_distance(a, b):
     x1 = a[0]; y1 = a[1]
@@ -461,6 +451,50 @@ def fixed_image_standardization(image_tensor):
     processed_tensor = (image_tensor - 127.5) / 128.0
     return processed_tensor
 
+
+# extract a single face from a given photograph
+def extract_face(filename, required_size=(160, 160)):
+	# load image from file
+	image = cv2.cvtColor(filename, cv2.COLOR_BGR2RGB)
+	# convert to array
+	pixels = asarray(image)
+	
+	image = Image.fromarray(pixels)
+	image = image.resize(required_size)
+	face_array = asarray(image)
+	return face_array
+
+def get_normalized(face_array):
+    # scale pixel values
+    face_pixels = face_array.astype('float32')
+    # standardize pixel values across channels (global)
+    mean, std = face_pixels.mean(), face_pixels.std()
+    # std_adj = std.clamp(min=1.0/(float(face_pixels.numel())**0.5))
+    face_pixels = (face_pixels - mean) / std
+    # transform face into one sample
+    # samples = expand_dims(face_pixels, axis=0)
+
+    return face_pixels
+
+def computeEmb(img1):
+    img1 = extract_face(filename=img1)
+    nor_img1 = get_normalized(img1)
+
+    convert_tensor = transforms.ToTensor()
+    conv_img1=convert_tensor(nor_img1)
+
+    resnet = InceptionResnetV1(pretrained='vggface2').eval()
+    img_embedding1 = resnet(conv_img1.unsqueeze(0))
+
+    return img_embedding1
+
+
+def computeCosin(emb1, img2):
+    emb2 = computeEmb(img2)
+    cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+    output = cos(emb1, emb2)
+    # print("goc ti le giua anh 1 va 2: ", output)
+    return output
 
 
 # def compare_image(img1, img2):

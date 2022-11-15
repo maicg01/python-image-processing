@@ -18,7 +18,6 @@ def train(train_dir):
         img2 = cv2.imread(pathName)
         img_origin, remember1 = process_image(img2)
         emb = computeEmb(img_origin)
-        emb = fixed_image_standardization(emb)
         print(emb)
         # print(path_img)
         index_label = image.find(".")
