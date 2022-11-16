@@ -477,16 +477,23 @@ def get_normalized(face_array):
     return face_pixels
 
 def computeEmb(img1):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
     img1 = extract_face(filename=img1)
     nor_img1 = get_normalized(img1)
 
     convert_tensor = transforms.ToTensor()
     conv_img1=convert_tensor(nor_img1)
 
-    resnet = InceptionResnetV1(pretrained='vggface2').eval()
-    img_embedding1 = resnet(conv_img1.unsqueeze(0))
+    x_aligned1=[]
+    x_aligned1.append(conv_img1)
+    test_aligned1 = torch.stack(x_aligned1).to(device)
+    test_embeddings1 = net(test_aligned1).detach().cpu()
 
-    return img_embedding1
+    # net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+    # img_embedding1 = net(conv_img1.unsqueeze(0))
+
+    return test_embeddings1
 
 
 def computeCosin(emb1, img2):
