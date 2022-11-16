@@ -12,13 +12,16 @@ import cv2
 import sys
 import math
 import matplotlib.pyplot as plt
-from facenet_pytorch import MTCNN, InceptionResnetV1
+from facenet_pytorch import MTCNN
+
 import torch
 from torchvision import transforms
 from PIL import Image
 import time
 from numpy import asarray
 from numpy import expand_dims
+
+from inceptionResnetV1 import InceptionResnetV1
 
 
 
@@ -503,6 +506,38 @@ def computeCosin(emb1, img2):
     # print("goc ti le giua anh 1 va 2: ", output)
     return output
 
+
+def computeEmbMTCNN(img1):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    mtcnn = MTCNN(
+    image_size=160, margin=0, min_face_size=20,
+    thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
+    device=device
+    )
+
+    net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+    x_test1, prob = mtcnn(img1, return_prob=True)
+    # print(prob)
+    print(x_test1.shape)
+
+    x_aligned1=[]
+    x_aligned1.append(x_test1)
+    test_aligned1 = torch.stack(x_aligned1).to(device)
+    test_embeddings1 = net(test_aligned1).detach().cpu()
+    print(type(test_embeddings1))
+
+    # net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+    # img_embedding1 = net(conv_img1.unsqueeze(0))
+
+    return test_embeddings1
+
+def computeCosinMTCNN(emb1, img2):
+    emb2 = computeEmbMTCNN(img2)
+    cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+    output = cos(emb1, emb2)
+    # print("goc ti le giua anh 1 va 2: ", output)
+    return output
 
 # def compare_image(img1, img2):
 #     image1 = process_image(img1)
