@@ -29,6 +29,7 @@ def main():
                 result, img = cap.read()
             # plt.imshow(img[:,:,::-1])
             # plt.show()
+            # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img_detect, remember = process_image(img)
             avr_time = 0
             
@@ -46,6 +47,7 @@ def main():
                     count = count + 1
                 print('ket qua cuoi cung', max(predict))
                 if max(predict) >= 0.65:
+                    
                     # print("vi tri anr: ", label[predict.index(max(predict))])
                     directory = label[predict.index(max(predict))]
                     print(directory)
@@ -54,6 +56,7 @@ def main():
                         os.makedirs(dir_fold, exist_ok = True)
                         frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(max(predict), 2))  + '.jpg'
                         print(frame_img_path)
+                        # img_save = cv2.resize(img_detect, (160,160))
                         cv2.imwrite(frame_img_path, img_detect)
                         print("Directory created successfully")
                         k=k+1
@@ -66,6 +69,7 @@ def main():
                         os.makedirs(dir_fold, exist_ok = True)
                         frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(max(predict), 2))  + '.jpg'
                         print(frame_img_path)
+                        # img_save = cv2.resize(img_detect, (160,160))
                         cv2.imwrite(frame_img_path, img_detect)
                         k=k+1
                     except OSError as error:

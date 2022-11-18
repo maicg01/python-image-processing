@@ -38,13 +38,14 @@ def main():
                 result, img = cap.read()
             # plt.imshow(img[:,:,::-1])
             # plt.show()
-            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             mtcnn = MTCNN(
                 image_size=160, margin=0, min_face_size=20,
                 thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
                 device=device
             )
-            img_detect, remember = mtcnn(img, return_prob=True)
+            path_detect = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/clasification_FR/dataMTCNNFacenet/dataTest/all/frame' + str(k) + '.jpg'
+            img_detect = mtcnn(img, save_path=path_detect)
             avr_time = 0
             
             predict=[]
@@ -68,8 +69,10 @@ def main():
                         dir_fold = os.path.join(path_dir, directory)
                         os.makedirs(dir_fold, exist_ok = True)
                         frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(max(predict), 2))  + '.jpg'
-                        print(frame_img_path)
-                        cv2.imwrite(frame_img_path, img)
+                        img_read = cv2.imread(path_detect, cv2.COLOR_BGR2RGB)
+                        # print(frame_img_path)
+                        cv2.imwrite(frame_img_path, img_read)
+                        
                         print("Directory created successfully")
                         k=k+1
                     except OSError as error:
@@ -80,8 +83,9 @@ def main():
                         dir_fold = os.path.join(path_dir, 'unknow')
                         os.makedirs(dir_fold, exist_ok = True)
                         frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(max(predict), 2))  + '.jpg'
-                        print(frame_img_path)
-                        cv2.imwrite(frame_img_path, img)
+                        img_read = cv2.imread(path_detect, cv2.COLOR_BGR2RGB)
+                        # print(frame_img_path)
+                        cv2.imwrite(frame_img_path, img_read)
                         k=k+1
                     except OSError as error:
                         print("Directory can not be created")

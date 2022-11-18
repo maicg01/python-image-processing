@@ -16,6 +16,7 @@ def train(train_dir):
         pathName = os.path.join(train_dir,image)
 
         img2 = cv2.imread(pathName)
+        # img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
         img_origin, remember1 = process_image(img2)
         emb = computeEmb(img_origin)
         print(emb)
