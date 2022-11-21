@@ -459,7 +459,12 @@ def fixed_image_standardization(image_tensor):
 def extract_face(filename, required_size=(160, 160)):
 	# load image from file
     # filename = np.float32(filename)
-    image = cv2.cvtColor(filename, cv2.COLOR_BGR2RGB)
+    try:
+        image = cv2.cvtColor(filename, cv2.COLOR_BGR2RGB)
+    except:
+        print('error image to cv2')
+        return np.random.randn(160,160,3)
+        
     # convert to array
     pixels = asarray(image)
 	
@@ -499,24 +504,17 @@ def computeEmb(img1,net):
     return test_embeddings1
 
 
-def computeCosin(emb1, img2):
-    emb2 = computeEmb(img2)
+def computeCosin(emb1, img2, mtcnn, net):
+    emb2 = computeEmb(img2, mtcnn, net)
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
     output = cos(emb1, emb2)
     # print("goc ti le giua anh 1 va 2: ", output)
     return output
 
 
-def computeEmbMTCNN(img1):
+def computeEmbMTCNN(img1, mtcnn, net):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    mtcnn = MTCNN(
-    image_size=160, margin=0, min_face_size=20,
-    thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
-    device=device
-    )
-
-    net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
     x_test1, prob = mtcnn(img1, return_prob=True)
     # print(prob)
     print(x_test1.shape)
@@ -532,96 +530,17 @@ def computeEmbMTCNN(img1):
 
     return test_embeddings1
 
-def computeCosinMTCNN(emb1, img2):
-    emb2 = computeEmbMTCNN(img2)
+def computeCosinMTCNN(emb1, img2, mtcnn, net):
+    emb2 = computeEmbMTCNN(img2, mtcnn, net)
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
     output = cos(emb1, emb2)
     # print("goc ti le giua anh 1 va 2: ", output)
     return output
 
-# def compare_image(img1, img2):
-#     image1 = process_image(img1)
-#     image2 = process_image(img2)
 
-#     results = computeCosin(image1,image2)
-#     # print("==========KQ run: ", results)
-#     return results
-
-# def main():
-#     cam_port=1
-#     # cap = cv2.VideoCapture(cam_port)
-#     cap = cv2.VideoCapture('rtsp://ai_dev:123654789@@@192.168.15.10:554/Streaming/Channels/1601')
-    
-#     path = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/dataExper/dataDemo'
-#     path_dir = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/dataExper/dataTest'
-#     k=0
-#     if cap.isOpened():
-#         while True:
-#             for i in range(20):
-#                 result, img = cap.read()
-#             for i in range(4):
-#                 result, img = cap.read()
-#             # plt.imshow(img[:,:,::-1])
-#             # plt.show()
-#             img_detect, remember = process_image(img)
-#             count = 0
-#             avr_time = 0
-#             time_start = time.time()
-#             predict=[]
-#             label = []
-#             if remember == 1:
-#                 for image in os.listdir(path):
-#                     pathName = [os.path.join(path,image)]
-#                     for pathtest in pathName:
-#                         img2 = cv2.imread(pathtest)
-#                         img_origin, remember1 = process_image(img2)
-#                         # print('done')
-#                         result = computeCosin(img_origin, img_detect)
-#                         print("===============", result)
-#                         predict.append(result.item())
-#                         label.append(pathtest)
-#                         count = count + 1
-#                 print('ket qua cuoi cung', max(predict))
-#                 if max(predict) >= 0.65:
-#                     # print("vi tri anr: ", label[predict.index(max(predict))])
-#                     path_img = label[predict.index(max(predict))]
-#                     path_img = path_img[-16:-4]
-#                     print(path_img)
-#                     index_label = path_img.find("/")
-#                     directory = path_img[index_label+1:]
-#                     print(directory)
-#                     try:
-#                         dir_fold = os.path.join(path_dir, directory)
-#                         os.makedirs(dir_fold, exist_ok = True)
-#                         frame_img_path = dir_fold + '/frame' + str(k) + '.jpg'
-#                         print(frame_img_path)
-#                         cv2.imwrite(frame_img_path, img_detect)
-#                         print("Directory created successfully")
-#                         k=k+1
-#                     except OSError as error:
-#                         print("Directory can not be created")
-#                 else:
-#                     print("unknow")
-#                     try:
-#                         dir_fold = os.path.join(path_dir, 'unknow')
-#                         os.makedirs(dir_fold, exist_ok = True)
-#                         frame_img_path = dir_fold + '/frame' + str(k) + '.jpg'
-#                         print(frame_img_path)
-#                         cv2.imwrite(frame_img_path, img_detect)
-#                         k=k+1
-#                     except OSError as error:
-#                         print("Directory can not be created")
-                
-                
-#                 time_end = time.time()
-#                 avr_time = round(((time_end-time_start)/count), 2)
-            
-#                 print(avr_time)
-#                 # print('Doneeeee')
-#         cap.release()
-#     cv2.destroyAllWindows()
-
-# main()
-
-
-
+# thay doi do sang cua anh de alpha = 1.0, beta = 35 hieu la muc sang cua tat ca cac pixel len anh them 35 don vi
+def change_brightness(img, alpha, beta):
+    img_new = np.asarray(alpha*img + beta, dtype=int)   # cast pixel values to int
+    img_new[img_new>255] = 255
+    img_new[img_new<0] = 0
+    return img_new

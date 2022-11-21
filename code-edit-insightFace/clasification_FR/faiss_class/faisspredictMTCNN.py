@@ -17,6 +17,13 @@ import faiss
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    mtcnn = MTCNN(
+                image_size=160, margin=0, min_face_size=20,
+                thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
+                device=device
+            )
+    
+    net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
     faceEncode = []
     labelOriginSet = []
     with open('X1.pkl', 'rb') as f:
@@ -46,11 +53,6 @@ def main():
             # plt.imshow(img[:,:,::-1])
             # plt.show()
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            mtcnn = MTCNN(
-                image_size=160, margin=0, min_face_size=20,
-                thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
-                device=device
-            )
             path_detect = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/clasification_FR/faiss_class/dataMTCNN/dataTest/all/frame' + str(k) + '.jpg'
             img_detect = mtcnn(img, save_path=path_detect)
             avr_time = 0
@@ -58,9 +60,9 @@ def main():
             
             if img_detect is not None:
                 time_start = time.time()
-                result = computeEmbMTCNN(img)
+                result = computeEmbMTCNN(img, mtcnn, net)
                 emb = np.array(result,dtype=np.float32)
-                w,result = face_index.search(emb, k=1)
+                w,result = face_index.search(emb, k=1) # tim kiem theo faiss 
                 label = [labelOriginSet[i] for i in result[0]]
 
                 if w[0][0] <= 1:

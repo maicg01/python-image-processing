@@ -8,7 +8,7 @@ import torch
 import torchvision
 from inceptionResnetV1 import InceptionResnetV1
 
-from facenetPreditctFunction import SCRFD, process_image, computeEmb, computeCosin, fixed_image_standardization
+from facenetPreditctFunction import SCRFD, process_image, computeEmb, computeCosin, fixed_image_standardization, change_brightness
 
 
 def main():
@@ -50,6 +50,7 @@ def main():
             # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             avr_time = 0
             img_detect, remember = process_image(img,detector=detector)
+            # img_detect = change_brightness(img_detect, 1.0, 10)
             # img_detect = cv2.dnn.blobFromImage(img_detect, scaleFactor=1/255.0, mean=(0, 0, 0))
             
             if img_detect is not None:
@@ -59,7 +60,7 @@ def main():
                 w,result = face_index.search(emb, k=1)
                 label = [labelOriginSet[i] for i in result[0]]
 
-                if w[0][0] <= 0.7:
+                if w[0][0] <= 0.9:
                     directory = label[0]
                     print(directory)
                     try:

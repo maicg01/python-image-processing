@@ -4,6 +4,8 @@ from sklearn import neighbors
 import pickle
 import cv2
 import numpy as np
+import torch
+from facenet_pytorch import MTCNN, InceptionResnetV1
 
 from facenetPreditctFunction import computeEmbMTCNN
 
@@ -13,12 +15,20 @@ def train(train_dir):
     X=[]
     y=[]
     #lap tung anh trong co so du lieu
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    mtcnn = MTCNN(
+    image_size=160, margin=0, min_face_size=20,
+    thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
+    device=device
+    )
+
+    net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
     for image in os.listdir(train_dir):
         pathName = os.path.join(train_dir,image)
 
         img2 = cv2.imread(pathName)
         img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2BGR)
-        emb = computeEmbMTCNN(img2)
+        emb = computeEmbMTCNN(img2, mtcnn, net)
         print(emb)
         # print(path_img)
         emb = np.array(emb,dtype=np.float32).reshape(512,)
