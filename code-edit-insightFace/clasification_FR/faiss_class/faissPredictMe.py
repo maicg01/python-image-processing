@@ -29,7 +29,7 @@ def main():
     
     faceEncode = np.array(faceEncode,dtype=np.float32)
     # create index with faiss
-    face_index = faiss.IndexFlatL2(512)
+    face_index = faiss.IndexFlatIP(512)
     # add vector
     face_index.add(faceEncode)
 
@@ -60,7 +60,7 @@ def main():
                 w,result = face_index.search(emb, k=1)
                 label = [labelOriginSet[i] for i in result[0]]
 
-                if w[0][0] <= 0.9:
+                if w[0][0] >= 0.6:
                     directory = label[0]
                     print(directory)
                     try:
