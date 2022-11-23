@@ -1,0 +1,1 @@
+python test_quality.py --backbone ./face_quality_model/backbone.pth --quality ./face_quality_model/quality.pth --file test_faces/
