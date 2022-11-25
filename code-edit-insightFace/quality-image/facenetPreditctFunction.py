@@ -21,7 +21,9 @@ import time
 from numpy import asarray
 from numpy import expand_dims
 
-from inceptionResnetV1 import InceptionResnetV1
+from fuction_compute import computeCosinQuality, load_net, take_image
+
+# from inceptionResnetV1 import InceptionResnetV1
 
 
 
@@ -372,45 +374,33 @@ def xyz_coordinates(kps):
 
     return distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye
 
-def process_image(img):
+def process_image(img, detector):
     remember = 0
     rotate_img = 0
     import glob
     #detector = SCRFD(model_file='./det.onnx')
     # detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_500m.onnx')
     # detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/insight-face/onnx/scrfd_34g.onnx')
-    detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/code-edit-insightFace/onnx/scrfd_2.5g_bnkps.onnx')
-    detector.prepare(-1)
+    
     
     h, w, c = img.shape
-    # h = int(img.shape[0])
-    # w = int(img.shape[1])
-    # print(h,w)
     area_base = h*w
-    # print("area===", area_base)
-    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    # img = cv2.resize(img, (640,640))
-
     for _ in range(1):
         ta = datetime.datetime.now()
-        # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640)) #max_num=1 thi ko phat hien chinh xac
-        # bboxes, kpss = detector.detect(img, 0.5, input_size = (640, 640), max_num=1)
         bboxes, kpss = detector.detect(img, 0.65)
         tb = datetime.datetime.now()
-    if kpss is not None:
-        print("======================================")
-        # print(kpss.shape)
-        # print(kpss)
+
     tl = 0
     tl1 = 0
     for i in range(bboxes.shape[0]):
         bbox = bboxes[i]
         x1,y1,x2,y2,_ = bbox.astype(np.int)
         _,_,_,_,score = bbox.astype(np.float)
-        # print("==================score", score)
-        # cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+
         crop_img = img[y1:y2, x1:x2]
-        # h1, w1 = np.shape(crop_img)
+        #them hien thi video
+        cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+        
         h1 = int(crop_img.shape[0])
         w1 = int(crop_img.shape[1])
         area_crop = h1*w1
@@ -431,24 +421,32 @@ def process_image(img):
 
             # print(tl)
 
-
             if area_crop == 0:
                 break
             elif (area_base/area_crop) > ((1080*1920)/(64*64)):
                 print("hinh nho")
+                cv2.putText(img, 'Hinh nho', (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255), thickness=2 )
             else:
                 if distance12 >= distance_nose1 and distance12 >= distance_nose2:
                     if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
                         # if tl >= 0.6 and tl1 >= 0.6:
                             remember=1
                             rotate_img = alignment(crop_img, l_eye, r_eye)
-                            # cv2.imwrite('./demo2/cr2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
-                            # plt.imshow(rotate_img[:,:,::-1])
-                            # plt.show()
-    return rotate_img, remember
-                        # else:
-                        #     rotate_img = alignment(img, l_eye, r_eye)
-                        #     # cv2.imwrite('./demo2/er2/frameNEW{0}_{1}_{2}_{3}.jpg'.format(k, round(tl, 2), round(tl1, 2), round(score, 2)), crop_img)
+                            rotate_img = cv2.resize(rotate_img, (112,112))
+                            return rotate_img, remember, x1, y1
+                else:
+                    cv2.putText(img, 'unknow1', (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255), thickness=2 )
+
+
+def process_image_package(img, detector):
+    for _ in range(1):
+        ta = datetime.datetime.now()
+        bboxes, kpss = detector.detect(img, 0.65)
+        tb = datetime.datetime.now()
+
+        return bboxes, kpss
+
+    
         
 def fixed_image_standardization(image_tensor):
     processed_tensor = (image_tensor - 127.5) / 128.0
@@ -458,14 +456,20 @@ def fixed_image_standardization(image_tensor):
 # extract a single face from a given photograph
 def extract_face(filename, required_size=(160, 160)):
 	# load image from file
-	image = cv2.cvtColor(filename, cv2.COLOR_BGR2RGB)
-	# convert to array
-	pixels = asarray(image)
+    # filename = np.float32(filename)
+    try:
+        image = cv2.cvtColor(filename, cv2.COLOR_BGR2RGB)
+    except:
+        print('error image to cv2')
+        return np.random.randn(160,160,3)
+        
+    # convert to array
+    pixels = asarray(image)
 	
-	image = Image.fromarray(pixels)
-	image = image.resize(required_size)
-	face_array = asarray(image)
-	return face_array
+    image = Image.fromarray(pixels)
+    image = image.resize(required_size)
+    face_array = asarray(image)
+    return face_array
 
 def get_normalized(face_array):
     # scale pixel values
@@ -479,9 +483,8 @@ def get_normalized(face_array):
 
     return face_pixels
 
-def computeEmb(img1):
+def computeEmb(img1,net):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
     img1 = extract_face(filename=img1)
     nor_img1 = get_normalized(img1)
 
@@ -499,24 +502,17 @@ def computeEmb(img1):
     return test_embeddings1
 
 
-def computeCosin(emb1, img2):
-    emb2 = computeEmb(img2)
+def computeCosin(emb1, img2, mtcnn, net):
+    emb2 = computeEmb(img2, mtcnn, net)
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
     output = cos(emb1, emb2)
     # print("goc ti le giua anh 1 va 2: ", output)
     return output
 
 
-def computeEmbMTCNN(img1):
+def computeEmbMTCNN(img1, mtcnn, net):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    mtcnn = MTCNN(
-    image_size=160, margin=0, min_face_size=20,
-    thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
-    device=device
-    )
-
-    net = InceptionResnetV1(pretrained='vggface2').eval().to(device)
     x_test1, prob = mtcnn(img1, return_prob=True)
     # print(prob)
     print(x_test1.shape)
@@ -532,96 +528,17 @@ def computeEmbMTCNN(img1):
 
     return test_embeddings1
 
-def computeCosinMTCNN(emb1, img2):
-    emb2 = computeEmbMTCNN(img2)
+def computeCosinMTCNN(emb1, img2, mtcnn, net):
+    emb2 = computeEmbMTCNN(img2, mtcnn, net)
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
     output = cos(emb1, emb2)
     # print("goc ti le giua anh 1 va 2: ", output)
     return output
 
-# def compare_image(img1, img2):
-#     image1 = process_image(img1)
-#     image2 = process_image(img2)
 
-#     results = computeCosin(image1,image2)
-#     # print("==========KQ run: ", results)
-#     return results
-
-# def main():
-#     cam_port=1
-#     # cap = cv2.VideoCapture(cam_port)
-#     cap = cv2.VideoCapture('rtsp://ai_dev:123654789@@@192.168.15.10:554/Streaming/Channels/1601')
-    
-#     path = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/dataExper/dataDemo'
-#     path_dir = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/dataExper/dataTest'
-#     k=0
-#     if cap.isOpened():
-#         while True:
-#             for i in range(20):
-#                 result, img = cap.read()
-#             for i in range(4):
-#                 result, img = cap.read()
-#             # plt.imshow(img[:,:,::-1])
-#             # plt.show()
-#             img_detect, remember = process_image(img)
-#             count = 0
-#             avr_time = 0
-#             time_start = time.time()
-#             predict=[]
-#             label = []
-#             if remember == 1:
-#                 for image in os.listdir(path):
-#                     pathName = [os.path.join(path,image)]
-#                     for pathtest in pathName:
-#                         img2 = cv2.imread(pathtest)
-#                         img_origin, remember1 = process_image(img2)
-#                         # print('done')
-#                         result = computeCosin(img_origin, img_detect)
-#                         print("===============", result)
-#                         predict.append(result.item())
-#                         label.append(pathtest)
-#                         count = count + 1
-#                 print('ket qua cuoi cung', max(predict))
-#                 if max(predict) >= 0.65:
-#                     # print("vi tri anr: ", label[predict.index(max(predict))])
-#                     path_img = label[predict.index(max(predict))]
-#                     path_img = path_img[-16:-4]
-#                     print(path_img)
-#                     index_label = path_img.find("/")
-#                     directory = path_img[index_label+1:]
-#                     print(directory)
-#                     try:
-#                         dir_fold = os.path.join(path_dir, directory)
-#                         os.makedirs(dir_fold, exist_ok = True)
-#                         frame_img_path = dir_fold + '/frame' + str(k) + '.jpg'
-#                         print(frame_img_path)
-#                         cv2.imwrite(frame_img_path, img_detect)
-#                         print("Directory created successfully")
-#                         k=k+1
-#                     except OSError as error:
-#                         print("Directory can not be created")
-#                 else:
-#                     print("unknow")
-#                     try:
-#                         dir_fold = os.path.join(path_dir, 'unknow')
-#                         os.makedirs(dir_fold, exist_ok = True)
-#                         frame_img_path = dir_fold + '/frame' + str(k) + '.jpg'
-#                         print(frame_img_path)
-#                         cv2.imwrite(frame_img_path, img_detect)
-#                         k=k+1
-#                     except OSError as error:
-#                         print("Directory can not be created")
-                
-                
-#                 time_end = time.time()
-#                 avr_time = round(((time_end-time_start)/count), 2)
-            
-#                 print(avr_time)
-#                 # print('Doneeeee')
-#         cap.release()
-#     cv2.destroyAllWindows()
-
-# main()
-
-
-
+# thay doi do sang cua anh de alpha = 1.0, beta = 35 hieu la muc sang cua tat ca cac pixel len anh them 35 don vi
+def change_brightness(img, alpha, beta):
+    img_new = np.asarray(alpha*img + beta, dtype=int)   # cast pixel values to int
+    img_new[img_new>255] = 255
+    img_new[img_new<0] = 0
+    return img_new
