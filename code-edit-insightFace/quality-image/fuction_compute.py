@@ -23,9 +23,13 @@ def load_state_dict(model, state_dict):
 
 def get_face_quality(backbone, quality, device, img):
     resized = cv2.resize(img, (112, 112))
-    ccropped = resized[...,::-1] # BGR to RGB
+    # ccropped = resized[...,::-1] # BGR to RGB
     # load numpy to tensor
-    ccropped = ccropped.swapaxes(1, 2).swapaxes(0, 1)
+    try:
+        ccropped = img.swapaxes(1, 2).swapaxes(0, 1)
+    except:
+        print('erorr')
+        return
     ccropped = np.reshape(ccropped, [1, 3, 112, 112])
     ccropped = np.array(ccropped, dtype = np.float32)
     ccropped = (ccropped - 127.5) / 128.0
@@ -104,28 +108,38 @@ def take_output(BACKBONE, QUALITY, DEVICE, output_path, file_test_path):
         return
 
 #take output image da dung cv2.imread()
-def take_image(BACKBONE, QUALITY, DEVICE, output_path, image):
+def take_image(BACKBONE, QUALITY, DEVICE, image):
     # output_path = 'quality_result'
-    if os.path.exists(output_path):
-        shutil.rmtree(output_path)
-    os.makedirs(output_path)
-    
+    # if os.path.exists(output_path):
+    #     shutil.rmtree(output_path)
+    # os.makedirs(output_path)
+
     # file_test_path = 'test_me/frameNEW126_0.6_0.62_0.81.jpg'
-    quality, fc_out = get_face_quality(BACKBONE, QUALITY, DEVICE, image)
-    cv2.imwrite('{}/{:.4f}.jpg'.format(output_path, quality[0]), image)
+    try:
+        quality, fc_out = get_face_quality(BACKBONE, QUALITY, DEVICE, image)
+    except:
+        print("error take image")
+        return
+    # cv2.imwrite('{}/{:.4f}.jpg'.format(output_path, quality[0]), image)
     return quality, fc_out
 
+def computeCosinQuality(emb1, emb2):
+    # emb2 = computeEmb(img2)
+    cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+    output = cos(emb1, emb2)
+    # print("goc ti le giua anh 1 va 2: ", output)
+    return output
 
 
-def main():
-    BACKBONE, QUALITY, DEVICE = load_net()
+# def main():
+#     BACKBONE, QUALITY, DEVICE = load_net()
 
-    output_path = 'quality_result'
-    file_test_path = 'test_me'
+#     output_path = 'quality_result'
+#     file_test_path = 'test_me'
 
-    quality, emb = take_output(BACKBONE, QUALITY, DEVICE, output_path=output_path, file_test_path=file_test_path)
-    print(quality, emb)
+#     quality, emb = take_output(BACKBONE, QUALITY, DEVICE, output_path=output_path, file_test_path=file_test_path)
+#     print(quality, emb)
 
-main()
+# main()
 
 
