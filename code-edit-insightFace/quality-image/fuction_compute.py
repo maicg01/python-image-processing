@@ -5,6 +5,9 @@ import os
 import argparse
 import shutil
 import numpy as np
+import torch.onnx 
+from torch.autograd import Variable
+import onnxruntime
 
 def load_state_dict(model, state_dict):
     all_keys = {k for k in state_dict.keys()}
@@ -40,6 +43,8 @@ def get_face_quality(backbone, quality, device, img):
     with torch.no_grad():
         x, fc = backbone(ccropped.to(device), True) # x la dau ra chuan hoa cua Resnet, fc la vecto danh gia chat luong khung hinh
         s = quality(fc)[0]
+        # print('================', s)
+        # print('================', fc.shape)
 
     return s.cpu().numpy(), x #x la vecto dac trung 512 chieu, s la vecto dung de tinh quality
 
@@ -57,20 +62,21 @@ def load_net():
 
     if os.path.isfile('./face_quality_model/backbone.pth'):
         print("Loading Backbone Checkpoint '{}'".format('./face_quality_model/backbone.pth'))
-        checkpoint = torch.load('./face_quality_model/backbone.pth', map_location='cpu')
+        checkpoint = torch.load('./face_quality_model/backbone.pth')
         load_state_dict(BACKBONE, checkpoint)
     else:
         print("No Checkpoint Found at '{}' Please Have a Check or Continue to Train from Scratch".format('./face_quality_model/backbone.pth'))
         return
     if os.path.isfile('./face_quality_model/quality.pth'):
         print("Loading Quality Checkpoint '{}'".format('./face_quality_model/quality.pth'))
-        checkpoint = torch.load('./face_quality_model/quality.pth', map_location='cpu')
+        checkpoint = torch.load('./face_quality_model/quality.pth')
         load_state_dict(QUALITY, checkpoint)
     else:
         print("No Checkpoint Found at '{}' Please Have a Check or Continue to Train from Scratch".format(args.quality))
         return
     BACKBONE.to(DEVICE)
     QUALITY.to(DEVICE)
+    print('device ', DEVICE)
     BACKBONE.eval()
     QUALITY.eval()
     print("done")
@@ -129,6 +135,94 @@ def computeCosinQuality(emb1, emb2):
     output = cos(emb1, emb2)
     # print("goc ti le giua anh 1 va 2: ", output)
     return output
+
+
+
+#viet ham chay onnx
+#Function to Convert to ONNX with 2 output
+def Convert_ONNX(model): 
+
+    # set the model to inference mode 
+    model.eval() 
+
+    # Let's create a dummy input tensor  
+    dummy_input = Variable(torch.randn(1, 3, 112, 112))
+
+    # Export the model   
+    torch.onnx.export(model,         # model being run 
+         dummy_input,       # model input (or a tuple for multiple inputs) 
+         "./onnx/Resnet2F.onnx",       # where to save the model  
+         export_params=True,  # store the trained parameter weights inside the model file 
+         opset_version=10,    # the ONNX version to export the model to 
+         do_constant_folding=True,  # whether to execute constant folding for optimization 
+         input_names = ['input'],   # the model's input names 
+         output_names = ['output_0', 'output_1'], # the model's output names 
+         dynamic_axes={'modelInput' : {0 : 'batch_size'},    # variable length axes 
+                                'modelOutput' : {0 : 'batch_size'}}) 
+    print(" ") 
+    print('Model has been converted to ONNX') 
+
+#Function to Convert to ONNX with 1 output
+def Convert_ONNX_1Output(model): 
+
+    # set the model to inference mode 
+    model.eval() 
+
+    # Let's create a dummy input tensor  
+    dummy_input = Variable(torch.randn(1, 25088))
+
+    # Export the model   
+    torch.onnx.export(model,         # model being run 
+         dummy_input,       # model input (or a tuple for multiple inputs) 
+         "./onnx/Quality.onnx",       # where to save the model  
+         export_params=True,  # store the trained parameter weights inside the model file 
+         opset_version=10,    # the ONNX version to export the model to 
+         do_constant_folding=True,  # whether to execute constant folding for optimization 
+         input_names = ['input'],   # the model's input names 
+         output_names = ['output'], # the model's output names 
+         dynamic_axes={'modelInput' : {0 : 'batch_size'},    # variable length axes 
+                                'modelOutput' : {0 : 'batch_size'}}) 
+    print(" ") 
+    print('Model has been converted to ONNX') 
+
+def load_model_onnx(file_name):
+    session = onnxruntime.InferenceSession(file_name, providers=['CUDAExecutionProvider'])
+    return session
+
+def process_onnx(img, session1, session2):
+    # session1 = load_model_onnx('./onnx/Resnet2F.onnx')
+    # session2 = load_model_onnx('./onnx/Quality.onnx')
+    # session1 model resnet co 2 output gom feature va vecto quality
+    # session2 la mmodel quality co output la chat luong cua buc anh
+
+    # chuan hoa dau vao
+    img = cv2.resize(img, (112, 112))
+    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    try:
+        ccropped = img.swapaxes(1, 2).swapaxes(0, 1)
+    except:
+        print('error')
+        return
+    ccropped = np.reshape(ccropped, [1, 3, 112, 112])
+    ccropped = np.array(ccropped, dtype = np.float32)
+    ccropped = (ccropped - 127.5) / 128.0
+
+    results1 = session1.run(['output_0', 'output_1'], {'input': ccropped}) #input phai la mot array, kp torch
+    print('results output', len(results1))
+    
+    feature = results1[0]
+    quality = results1[1]
+
+    results2 = session2.run(['output'], {'input': quality})
+
+    rs_quality = results2[0]
+
+    feature = torch.from_numpy(feature)
+    print("shape cua feature: ", type(feature))
+
+    return rs_quality[0], feature
+
 
 
 # def main():
