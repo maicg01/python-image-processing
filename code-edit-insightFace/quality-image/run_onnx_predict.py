@@ -45,12 +45,12 @@ def main():
     cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/video_gt.avi')
     
     path = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/quality-image/dataMe/dataDemo'
-    path_dir = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/quality-image/dataMe/dataTest'
+    path_dir = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/quality-image/test_quality/test_onnx_4frame'
     k=0
     if cap.isOpened():
         while True:
-            # for i in range(4):
-            result, img = cap.read()
+            for i in range(4):
+                result, img = cap.read()
             # plt.imshow(img[:,:,::-1])
             # plt.show()
             # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -90,77 +90,84 @@ def main():
                     if area_crop == 0:
                         break
                     elif (area_base/area_crop) > ((1080*1920)/(64*64)):
-                        print("Hinh nho")
+                        print("hinh nho")
                         cv2.putText(img, 'Hinh nho', (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255), thickness=2)
                     else:
-                        if distance12 >= distance_nose1 and distance12 >= distance_nose2:
-                            if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
-                                # if tl >= 0.6 and tl1 >= 0.6
-                                    rotate_img = alignment(crop_img, l_eye, r_eye)
-                                    rotate_img = cv2.resize(rotate_img, (112,112))
-                                    time_start = time.time()
-                                    try:
-                                        quality, emb = process_onnx(rotate_img, BACKBONE, QUALITY)
-                                    except:
-                                        continue
-                                    print(emb.shape)
-                                    emb = emb.cpu().detach().numpy()
-                                    emb = np.array(emb,dtype=np.float32)
-                                    w, result = face_index.search(emb, k=1)
-                                    label = [labelOriginSet[i] for i in result[0]]
+                        # if distance12 >= distance_nose1 and distance12 >= distance_nose2:
+                        #     if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
+                        #         # if tl >= 0.6 and tl1 >= 0.6
+                        rotate_img = alignment(crop_img, l_eye, r_eye)
+                        rotate_img = cv2.resize(rotate_img, (112,112))
+                        time_start = time.time()
+                        try:
+                            quality, emb = process_onnx(rotate_img, BACKBONE, QUALITY)
+                        except:
+                            continue
+                        print(emb.shape)
+                        emb = emb.cpu().detach().numpy()
+                        emb = np.array(emb,dtype=np.float32)
+                        w, result = face_index.search(emb, k=1)
+                        label = [labelOriginSet[i] for i in result[0]]
 
-                                    if quality[0] < 0.2:
-                                        output_path = 'quality_result_bad'
-                                        dir_fold = os.path.join(path_dir, output_path)
-                                        os.makedirs(dir_fold, exist_ok = True)
+                        if quality[0] < 0.25:
+                            output_path = 'quality_result_bad'
+                            dir_fold = os.path.join(path_dir, output_path)
+                            os.makedirs(dir_fold, exist_ok = True)
 
-                                        frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(quality[0], 4))  + '.jpg'
-                                        cv2.imwrite(frame_img_path, rotate_img)
-                                    else:
-                                        output_path = 'quality_result_good'
-                                        dir_fold = os.path.join(path_dir, output_path)
-                                        os.makedirs(dir_fold, exist_ok = True)
+                            frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(quality[0], 4))  + '.jpg'
+                            cv2.imwrite(frame_img_path, rotate_img)
+                        elif quality[0] > 0.5:
+                            output_path = 'quality_result_good'
+                            dir_fold = os.path.join(path_dir, output_path)
+                            os.makedirs(dir_fold, exist_ok = True)
 
-                                        frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(quality[0], 4))  + '.jpg'
-                                        cv2.imwrite(frame_img_path, rotate_img)
-
-                                    if w[0][0] >= 0.35:
-                                        directory = label[0]
-                                        print(directory)
-                                        
-                                        cv2.putText(img, directory, (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255), thickness=2 )
-                                        try:
-                                            dir_fold = os.path.join(path_dir, directory)
-                                            os.makedirs(dir_fold, exist_ok = True)
-                                            frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(w[0][0], 2))  + '.jpg'
-                                            print(frame_img_path)
-                                            # img_save = cv2.resize(img_detect, (160,160))
-                                            cv2.imwrite(frame_img_path, rotate_img)
-                                            print("Directory created successfully")
-                                            k=k+1
-                                        except OSError as error:
-                                            print("Directory can not be created")
-                                    else:
-                                        print("unknow")
-                                        cv2.putText(img, 'unknow', (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255), thickness=2 )
-                                        try:
-                                            dir_fold = os.path.join(path_dir, 'unknow')
-                                            os.makedirs(dir_fold, exist_ok = True)
-                                            frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(w[0][0], 2))  + '.jpg'
-                                            print(frame_img_path)
-                                            # img_save = cv2.resize(img_detect, (160,160))
-                                            cv2.imwrite(frame_img_path, rotate_img)
-                                            k=k+1
-                                        except OSError as error:
-                                            print("Directory can not be created")
-                                    
-                                    time_end = time.time()
-                                    avr_time = round(((time_end-time_start)), 2)
-                                    print(avr_time)
-                                    # print('Doneeeee')                                    
-                                    
+                            frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(quality[0], 4))  + '.jpg'
+                            cv2.imwrite(frame_img_path, rotate_img)
                         else:
-                            cv2.putText(img, 'unknow1', (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255), thickness=2 )
+                            if distance12 >= distance_nose1 and distance12 >= distance_nose2:
+                                if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
+                                    output_path = 'quality_result_take'
+                                    dir_fold = os.path.join(path_dir, output_path)
+                                    os.makedirs(dir_fold, exist_ok = True)
+
+                                    frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(quality[0], 4))  + '.jpg'
+                                    cv2.imwrite(frame_img_path, rotate_img)
+
+
+                        if w[0][0] >= 0.35:
+                            directory = label[0]
+                            print(directory)
+                            
+                            cv2.putText(img, directory, (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255), thickness=2 )
+                            try:
+                                dir_fold = os.path.join(path_dir, directory)
+                                os.makedirs(dir_fold, exist_ok = True)
+                                frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(w[0][0], 2))  + '.jpg'
+                                print(frame_img_path)
+                                # img_save = cv2.resize(img_detect, (160,160))
+                                cv2.imwrite(frame_img_path, rotate_img)
+                                print("Directory created successfully")
+                                k=k+1
+                            except OSError as error:
+                                print("Directory can not be created")
+                        else:
+                            print("unknow")
+                            cv2.putText(img, 'unknow', (x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255), thickness=2 )
+                            try:
+                                dir_fold = os.path.join(path_dir, 'unknow')
+                                os.makedirs(dir_fold, exist_ok = True)
+                                frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(w[0][0], 2))  + '.jpg'
+                                print(frame_img_path)
+                                # img_save = cv2.resize(img_detect, (160,160))
+                                cv2.imwrite(frame_img_path, rotate_img)
+                                k=k+1
+                            except OSError as error:
+                                print("Directory can not be created")
+                        time_end = time.time()
+                        avr_time = round(((time_end-time_start)), 2)
+                        print(avr_time)
+                        # print('Doneeeee')                                    
+                                    
 
                     #them hien thi video
                     cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
