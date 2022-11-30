@@ -41,12 +41,12 @@ def main():
     # cam_port=1
     # cap = cv2.VideoCapture(cam_port)
     # cap = cv2.VideoCapture('rtsp://ai_dev:123654789@@@192.168.15.10:554/Streaming/Channels/1601')
-    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/video_gt.avi')
+    cap = cv2.VideoCapture('/home/maicg/Documents/python-image-processing/video_59s.avi')
     
     path = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/quality-image/dataMe/dataDemo'
-    path_dir = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/quality-image/test_quality/ID/test1'
+    path_dir = '/home/maicg/Documents/python-image-processing/code-edit-insightFace/quality-image/test_quality/ID/test2'
     k=0
-    name_id = 0
+    name_id = len(labelOriginSet)
     if cap.isOpened():
         while True:
             for i in range(4):
@@ -54,13 +54,13 @@ def main():
             # plt.imshow(img[:,:,::-1])
             # plt.show()
             # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
             bboxes, kpss = process_image_package(img, detector)
             h, w, c = img.shape
             area_base = h*w
             tl = 0
             tl1 = 0
             for i in range(bboxes.shape[0]):
+                time_start = time.time()
                 bbox = bboxes[i]
                 x1,y1,x2,y2,_ = bbox.astype(np.int)
                 _,_,_,_,score = bbox.astype(np.float)
@@ -98,7 +98,6 @@ def main():
                                 # if tl >= 0.6 and tl1 >= 0.6
                                 rotate_img = alignment(crop_img, l_eye, r_eye)
                                 rotate_img = cv2.resize(rotate_img, (112,112))
-                                time_start = time.time()
                                 try:
                                     quality, emb = process_onnx(rotate_img, BACKBONE, QUALITY)
                                 except:
@@ -176,10 +175,10 @@ def main():
                             except OSError as error:
                                 print("Directory can not be created")
 
-                        time_end = time.time()
-                        avr_time = round(((time_end-time_start)), 2)
-                        print(avr_time)
-                        # print('Doneeeee')                                    
+                time_end = time.time()
+                avr_time = round(((time_end-time_start)), 2)
+                print(avr_time)
+                # print('Doneeeee')                                    
                                     
                 #them hien thi video
                 cv2.rectangle(img, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
@@ -189,5 +188,10 @@ def main():
 
         cap.release()
     cv2.destroyAllWindows()
+    with open('X.pkl', 'wb') as f:
+        pickle.dump(faceEncode, f)  
+
+    with open('y.pkl', 'wb') as f:
+        pickle.dump(labelOriginSet, f) 
 
 main()
