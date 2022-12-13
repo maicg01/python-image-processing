@@ -1,6 +1,8 @@
 import argparse
 import os
 from time import time
+import pickle
+import faiss
 
 import align.detect_face as detect_face
 import cv2
@@ -16,13 +18,21 @@ from utils.facenetPreditctFunction import SCRFD, alignment, process_image_packag
 from utils.fuction_compute import process_onnx, load_model_onnx 
 logger = Logger()
 
+def search(list, platform):
+    for i in range(len(list)):
+        if list[i] == platform:
+            return True
+    return False
 
 def main():
+    path_dir = './data_test/test1'
     global colours, img_size
     args = parse_args()
+    # videos_dir = 'videos/video_gt.avi'
     videos_dir = 'videos/1_video_AH.avi'
     output_path = args.output_path
     no_display = args.no_display
+    print("=======no display: ", no_display)
     detect_interval = args.detect_interval  # you need to keep a balance between performance and fluency
     margin = args.margin  # if the face is big in your video ,you can set it bigger for tracking easiler
     scale_rate = args.scale_rate  # if set it smaller will make input frames smaller
@@ -31,6 +41,25 @@ def main():
 
     detector = SCRFD(model_file='/home/maicg/Documents/python-image-processing/code-edit-insightFace/onnx/scrfd_2.5g_bnkps.onnx')
     detector.prepare(-1)
+    BACKBONE = load_model_onnx('./onnx/Resnet2F.onnx')
+    QUALITY = load_model_onnx('./onnx/Quality.onnx')
+
+    faceEncode = []
+    labelOriginSet = []
+    with open('X.pkl', 'rb') as f:
+        faceEncode = pickle.load(f)
+
+    with open('y.pkl', 'rb') as f:
+        labelOriginSet = pickle.load(f)
+    
+    faceEncode = np.array(faceEncode,dtype=np.float32)
+    # create index with faiss
+    face_index = faiss.IndexFlatIP(512)
+    # add vector
+    face_index.add(faceEncode)
+    faceEncode = list(faceEncode)
+    print("ty==========", type(faceEncode))
+
     mkdir(output_path)
     # for display
     if not no_display:
@@ -39,76 +68,194 @@ def main():
     # init tracker
     tracker = Sort()  # create instance of the SORT tracker
 
-    directoryname = os.path.join(output_path, videos_dir.split('.')[0])
+    directoryname = os.path.join(output_path, 'scrfd_detect')
     print("===directoryname: ", directoryname)
     cam = cv2.VideoCapture(videos_dir)
+
+    k = 0
     c = 0
+    list_id = []
+    name_list = []
+    name_id = len(labelOriginSet)
+    print("name ID: ", name_id)
+    quit_loop = False
     while True:
         final_faces = []
         addtional_attribute_list = []
-        ret, frame = cam.read()
-        if not ret:
-            logger.warning("ret false")
-            break
-        if frame is None:
-            logger.warning("frame drop")
-            break
-
-        frame = cv2.resize(frame, (0, 0), fx=scale_rate, fy=scale_rate)
-        h, w, c = frame.shape
-        # r_g_b_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        if c % detect_interval == 0:
-            print("=====detect_interval: ", detect_interval)
-            img_size = np.asarray(frame.shape)[0:2]
-            mtcnn_starttime = time()
-            # faces, points = detect_face.detect_face(r_g_b_frame, minsize, pnet, rnet, onet, threshold,
-            #                                         factor)
-            bboxes, kpss = process_image_package(frame, detector)
-
-            face_list = []
-            facial_landmarks = []
-            for i in range(bboxes.shape[0]):
-                bbox = bboxes[i]
-                x1,y1,x2,y2,_ = bbox.astype(np.int)
-                _,_,_,_,score = bbox.astype(np.float)
-
-                crop_img = frame[y1:y2, x1:x2]
-                
-                h1 = int(crop_img.shape[0])
-                w1 = int(crop_img.shape[1])
-                face = np.array([x1,y1,x2,y2,score])
-                face_list.append(face)
-
-                if kpss is not None:
-                    kps = kpss[i]
-                    for j in range(5):
-                        facial_landmarks.append(kps[j].tolist())
-                    dist_rate, high_ratio_variance, width_rate = judge_side_face(np.array(facial_landmarks))
-                    item_list = [crop_img, score, dist_rate, high_ratio_variance, width_rate]
-                    addtional_attribute_list.append(item_list)
-
-            print("facial landmarks: ", facial_landmarks)
-            final_faces = np.array(face_list)
+        for i in range(2):
+            try:
+                ret, frame = cam.read()
+            except:
+                quit_loop = True
         
-        print('===============addtional_attribute_list', addtional_attribute_list)
-        trackers = tracker.update(final_faces, img_size, directoryname, addtional_attribute_list, detect_interval)
-        c += 1
+        # frame = cv2.resize(frame, (0, 0), fx=scale_rate, fy=scale_rate)
+        scrdf_starttime = time()
+        try:
+            bboxes, kpss = process_image_package(frame, detector)
+        except:
+            quit_loop = True
+        logger.info("MTCNN detect face cost time : {} s".format(round(time() - scrdf_starttime, 3)))
 
+        if quit_loop:
+            with open('X.pkl', 'wb') as f:
+                pickle.dump(faceEncode, f)  
+            print("runningnnn")
+            with open('y.pkl', 'wb') as f:
+                pickle.dump(labelOriginSet, f)
+            break
+        h, w, c = frame.shape
+        area_base = h*w
+        tl = 0
+        tl1 = 0
+        
+        img_size = np.asarray(frame.shape)[0:2]
+
+        face_list = []
+        facial_landmarks = []
+        for i in range(bboxes.shape[0]):
+            bbox = bboxes[i]
+            x1,y1,x2,y2,_ = bbox.astype(np.int)
+            _,_,_,_,score = bbox.astype(np.float)
+
+            crop_img = frame[y1:y2, x1:x2]
+            
+            h1 = int(crop_img.shape[0])
+            w1 = int(crop_img.shape[1])
+            face = np.array([x1,y1,x2,y2,score])
+            face_list.append(face)
+
+            if kpss is not None:
+                kps = kpss[i]
+                # print("kpslllllllll: ", type(kps))
+                for j in range(5):
+                    facial_landmarks.append(kps[j].tolist())
+                dist_rate, high_ratio_variance, width_rate = judge_side_face(np.array(facial_landmarks))
+                item_list = [crop_img, score, dist_rate, high_ratio_variance, width_rate]
+                addtional_attribute_list.append(item_list)
+
+        final_faces = np.array(face_list)
+        
+        # print('===============addtional_attribute_list', addtional_attribute_list)
+        trackers = tracker.update(final_faces, img_size, directoryname, addtional_attribute_list, detect_interval)
+        # print("==============tracker: ", trackers)
+
+        remember = 0
         for d in trackers:
+            # print(len(trackers))
+            new_kps = facial_landmarks[remember:remember+5]
+            new_kps = np.array(new_kps)
+            # print("new_kps: ", new_kps[0])
+            remember = remember + 5
+            # print("no display: ", no_display)
+
+            distance12, distance_nose1, distance_nose2, distance_center_eye_mouth, distance_nose_ceye, distance_nose_cmouth, distance_eye, distance_mouth, l_eye, r_eye = xyz_coordinates(new_kps)
+            if (distance_nose1-distance_nose2) <= 0:
+                # print("=====================dt1,dt2",distance_nose1,distance_nose2)
+                tl = distance_nose1/distance_nose2
+            else: 
+                # print("else=====================dt1,dt2",distance_nose1,distance_nose2)
+                tl = distance_nose2/distance_nose1
+            
+            if (distance_nose_ceye - distance_nose_cmouth) <= 0:
+                tl1 = distance_nose_ceye/distance_nose_cmouth
+            else:
+                tl1 = distance_nose_cmouth/distance_nose_ceye
+
             if not no_display:
+                print("===============running=============")
                 d = d.astype(np.int32)
-                cv2.rectangle(frame, (d[0], d[1]), (d[2], d[3]), colours[d[4] % 32, :] * 255, 3)
-                if final_faces != []:
-                    cv2.putText(frame, 'ID : %d  DETECT' % (d[4]), (d[0] - 10, d[1] - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX,
-                                0.75,
-                                colours[d[4] % 32, :] * 255, 2)
-                    cv2.putText(frame, 'DETECTOR', (5, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.75,
-                                (1, 1, 1), 2)
+                print("============================================d: ", d)
+                cropImg = frame[int(d[1]):int(d[3]),int(d[0]):int(d[2])]
+                h1 = int(cropImg.shape[0])
+                w1 = int(cropImg.shape[1])
+                area_crop = h1*w1
+
+                if area_crop == 0:
+                    break
+
+                if search(list_id, d[4]) is False:
+                    list_id.append(d[4])
+                    if (area_base/area_crop) > ((1080*1920)/(64*64)):
+                        print("hinh nho")
+                        cv2.putText(frame, 'Hinh nho', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=(0,0,255), thickness=2)
+                        list_id.pop()
+                    else:
+                        if distance12 >= distance_nose1 and distance12 >= distance_nose2:
+                            if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
+                                # if tl >= 0.6 and tl1 >= 0.6
+                                rotate_img = alignment(cropImg, l_eye, r_eye)
+                                rotate_img = cv2.resize(rotate_img, (112,112))
+                                try:
+                                    quality, emb = process_onnx(rotate_img, BACKBONE, QUALITY)
+                                except:
+                                    continue
+                                # print(emb.shape)
+                                emb = emb.cpu().detach().numpy()
+                                emb = np.array(emb,dtype=np.float32)
+                                w, result = face_index.search(emb, k=1)
+                                label = [labelOriginSet[i] for i in result[0]]                        
+                                print("=========listid", list_id)
+                                print("=========listid", name_id)
+                                if w[0][0] >= 0.53: #test vs 0.45
+                                    directory = label[0]
+                                    print(directory)
+                                    name_list.append(directory)
+
+                                    cv2.putText(frame, directory, (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
+                                    try:
+                                        dir_fold = os.path.join(path_dir, directory)
+                                        os.makedirs(dir_fold, exist_ok = True)
+                                        frame_img_path = dir_fold + '/frame' + str(k) + '_' + str(round(quality[0], 4)) + '_' + str(round(w[0][0], 2))  + '.jpg'
+                                        print(frame_img_path)
+                                        # img_save = cv2.resize(img_detect, (160,160))
+                                        cv2.imwrite(frame_img_path, rotate_img)
+                                        print("Directory created successfully")
+                                        k=k+1
+                                    except OSError as error:
+                                        print("Directory can not be created")
+                                else:
+                                    if quality[0] > 0.52:
+                                        try:
+                                            name_path_id = 'ID' + str(name_id)
+                                            cv2.putText(frame, name_path_id, (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
+                                            output_path = 'quality_result_good/' + name_path_id
+                                            dir_fold = os.path.join(path_dir, output_path)
+                                            os.makedirs(dir_fold, exist_ok = True)
+
+                                            frame_img_path = dir_fold + '/frame_n4' + str(k) + '_' + str(round(quality[0], 4)) + '_' + str(round(w[0][0], 2))  + '.jpg'
+                                            cv2.imwrite(frame_img_path, rotate_img)
+
+                                            face_index.add(emb)
+                                            labelOriginSet.append(name_path_id)
+
+                                            emb = np.array(emb,dtype=np.float32).reshape(512,)
+                                            faceEncode.append(emb)
+                                            name_list.append(name_path_id)
+
+                                            name_id = name_id+1
+                                        except OSError as error:
+                                            print("Directory can not be created")
+                                    
+                                    else:
+                                        list_id.pop()
+                                        cv2.putText(frame, 'bad_qlt', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
+                                        try: 
+                                            output_path = 'quality_result_bad'
+                                            dir_fold = os.path.join(path_dir, output_path)
+                                            os.makedirs(dir_fold, exist_ok = True)
+                                            frame_img_path = dir_fold + '/frame_n4' + str(k) + '_' + str(round(quality[0], 4)) + '_' + str(round(w[0][0], 2))  + '.jpg'
+                                            cv2.imwrite(frame_img_path, rotate_img)
+                                        except OSError as error:
+                                            print("Directory can not be created")
+
+                        else:
+                            list_id.pop()
+                            cv2.putText(frame, 'bad_img', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
                 else:
-                    cv2.putText(frame, 'ID : %d' % (d[4]), (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX,
-                                0.75,
-                                colours[d[4] % 32, :] * 255, 2)
+                    f_name = name_list[list_id.index(d[4])]
+                    cv2.putText(frame, f_name, (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
+
+                cv2.rectangle(frame, (d[0], d[1]), (d[2], d[3]), colours[d[4] % 32, :] * 255, 3)
 
         if not no_display:
             frame = cv2.resize(frame, (0, 0), fx=show_rate, fy=show_rate)
