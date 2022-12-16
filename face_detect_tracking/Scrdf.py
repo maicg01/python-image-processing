@@ -25,11 +25,13 @@ def search(list, platform):
     return False
 
 def main():
-    path_dir = './data_test/test1'
+    path_dir = './data_test/test2'
     global colours, img_size
     args = parse_args()
     # videos_dir = 'videos/video_gt.avi'
-    videos_dir = 'videos/1_video_AH.avi'
+    # videos_dir = 'videos/1_video_AH.avi'
+    # videos_dir = '/home/maicg/Documents/python-image-processing/pexels-artem-podrez-7956859.mp4'
+    videos_dir = 'rtsp://ai_dev:123654789@@@192.168.15.10:554/Streaming/Channels/1601'
     output_path = args.output_path
     no_display = args.no_display
     print("=======no display: ", no_display)
@@ -44,6 +46,7 @@ def main():
     BACKBONE = load_model_onnx('./onnx/Resnet2F.onnx')
     QUALITY = load_model_onnx('./onnx/Quality.onnx')
 
+    # set origin
     faceEncode = []
     labelOriginSet = []
     with open('X.pkl', 'rb') as f:
@@ -59,6 +62,29 @@ def main():
     face_index.add(faceEncode)
     faceEncode = list(faceEncode)
     print("ty==========", type(faceEncode))
+
+    # #set new data ID
+    # faceEncode_newID = []
+    # label_newID = []
+    # try:
+    #     with open('X1.pkl', 'rb') as f:
+    #         faceEncode_newID = pickle.load(f)
+            
+
+    #     with open('y1.pkl', 'rb') as f:
+    #         label_newID = pickle.load(f)  
+    # except:
+    #     print("No file unknown")  
+
+    # faceEncode_newID = np.array(faceEncode,dtype=np.float32)
+    # # create index with faiss
+    # face_index_newID = faiss.IndexFlatIP(512)
+    # # add vector
+    # face_index_newID.add(faceEncode)
+    # faceEncode = list(faceEncode)
+    # print("ty==========", type(faceEncode))
+    
+    
 
     mkdir(output_path)
     # for display
@@ -238,7 +264,7 @@ def main():
                                     
                                     else:
                                         list_id.pop()
-                                        cv2.putText(frame, 'bad_qlt', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
+                                        cv2.putText(frame, 'bad_qlt', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=(0,0,255), thickness=2 )
                                         try: 
                                             output_path = 'quality_result_bad'
                                             dir_fold = os.path.join(path_dir, output_path)
@@ -247,12 +273,21 @@ def main():
                                             cv2.imwrite(frame_img_path, rotate_img)
                                         except OSError as error:
                                             print("Directory can not be created")
+                            else:
+                                list_id.pop()
+                                cv2.putText(frame, 'bad_img', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=(0,0,255), thickness=2 )
 
                         else:
                             list_id.pop()
-                            cv2.putText(frame, 'bad_img', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
+                            cv2.putText(frame, 'bad_img', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=(0,0,255), thickness=2 )
                 else:
-                    f_name = name_list[list_id.index(d[4])]
+                    try:
+                        f_name = name_list[list_id.index(d[4])]
+                        print("danh sach ten: ", name_list)
+                        print("f_name=============================", f_name)
+                    except:
+                        print("sai o f_name")
+                        continue
                     cv2.putText(frame, f_name, (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
 
                 cv2.rectangle(frame, (d[0], d[1]), (d[2], d[3]), colours[d[4] % 32, :] * 255, 3)
