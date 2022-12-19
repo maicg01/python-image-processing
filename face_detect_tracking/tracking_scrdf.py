@@ -5,7 +5,6 @@ from datetime import datetime
 import pickle
 import faiss
 
-import align.detect_face as detect_face
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -17,7 +16,7 @@ from src.sort import Sort
 
 from utils.facenetPreditctFunction import SCRFD, alignment, process_image_package, xyz_coordinates
 from utils.fuction_compute import process_onnx, load_model_onnx 
-logger = Logger()
+# logger = Logger()
 
 def search(list, platform):
     for i in range(len(list)):
@@ -26,11 +25,11 @@ def search(list, platform):
     return False
 
 def main():
-    path_dir = './data_test/test4_2dt'
+    path_dir = './data_test/test5'
     global colours, img_size
     args = parse_args()
-    # videos_dir = 'videos/video_gt.avi'
-    videos_dir = 'videos/1_video_AH.avi'
+    videos_dir = 'videos/video_gt.avi'
+    # videos_dir = 'videos/1_video_AH.avi'
     # videos_dir = 'videos/2_Obama.mp4'
     # videos_dir = '/home/maicg/Documents/python-image-processing/pexels-artem-podrez-7956859.mp4'
     # videos_dir = 'rtsp://ai_dev:123654789@@@192.168.15.10:554/Streaming/Channels/1601'
@@ -90,7 +89,6 @@ def main():
     print("ty==========", type(faceEncode_newID))
     
     
-
     mkdir(output_path)
     # for display
     if not no_display:
@@ -103,8 +101,6 @@ def main():
     print("===directoryname: ", directoryname)
     cam = cv2.VideoCapture(videos_dir)
 
-    k = 0
-    c = 0
     list_id = []
     name_list = []
     # name_id = len(labelOriginSet)
@@ -112,6 +108,7 @@ def main():
     print("len data origin: ", len(labelOriginSet))
     print("name ID: ", name_id)
     quit_loop = False
+    remember_tracking = 0
     while True:
         final_faces = []
         addtional_attribute_list = []
@@ -133,7 +130,7 @@ def main():
             bboxes, kpss = process_image_package(frame, detector)
         except:
             quit_loop = True
-        logger.info("MTCNN detect face cost time : {} s".format(round(time() - scrdf_starttime, 3)))
+        # logger.info("MTCNN detect face cost time : {} s".format(round(time() - scrdf_starttime, 3)))
 
         if quit_loop:
             with open('X1.pkl', 'wb') as f:
@@ -141,6 +138,12 @@ def main():
             print("runningnnn")
             with open('y1.pkl', 'wb') as f:
                 pickle.dump(label_newID, f)
+
+            with open('X.pkl', 'wb') as f:
+                pickle.dump(faceEncode, f)  
+            print("runningnnn")
+            with open('y.pkl', 'wb') as f:
+                pickle.dump(labelOriginSet, f)
             break
         h, w, c = frame.shape
         area_base = h*w
@@ -201,9 +204,7 @@ def main():
                 tl1 = distance_nose_cmouth/distance_nose_ceye
 
             if not no_display:
-                print("===============running=============")
                 d = d.astype(np.int32)
-                print("============================================d: ", d)
                 cropImg = frame[int(d[1]):int(d[3]),int(d[0]):int(d[2])]
                 h1 = int(cropImg.shape[0])
                 w1 = int(cropImg.shape[1])
@@ -243,6 +244,12 @@ def main():
                                     print(directory)
                                     name_list.append(directory)
 
+                                    # # add emb in datebase
+                                    # face_index.add(emb)
+                                    # labelOriginSet.append(directory)
+                                    # emb = np.array(emb,dtype=np.float32).reshape(512,)
+                                    # faceEncode.append(emb)
+
                                     cv2.putText(frame, directory, (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
                                     try:
                                         dir_fold = os.path.join(path_dir, directory)
@@ -252,7 +259,6 @@ def main():
                                         # img_save = cv2.resize(img_detect, (160,160))
                                         cv2.imwrite(frame_img_path, rotate_img)
                                         print("Directory created successfully")
-                                        k=k+1
                                     except OSError as error:
                                         print("Directory can not be created")
                                 else:
@@ -267,9 +273,14 @@ def main():
                                         pass
                                     if w[0][0] >= 0.53: #test vs 0.45
                                         directory = label[0]
-                                        print(directory)
-                                        print("chay 2222222222222222222222222222222222222222222222222222222222222")
+                                        # print(directory)
                                         name_list.append(directory)
+
+                                        # # add emb in data unknown
+                                        # face_index_newID.add(emb)
+                                        # label_newID.append(directory)
+                                        # emb = np.array(emb,dtype=np.float32).reshape(512,)
+                                        # faceEncode_newID.append(emb)
 
                                         cv2.putText(frame, directory, (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
                                         try:
@@ -280,7 +291,6 @@ def main():
                                             # img_save = cv2.resize(img_detect, (160,160))
                                             cv2.imwrite(frame_img_path, rotate_img)
                                             print("Directory created successfully")
-                                            k=k+1
                                         except OSError as error:
                                             print("Directory can not be created")
                                     else: 
@@ -327,15 +337,56 @@ def main():
                             list_id.pop()
                             cv2.putText(frame, 'bad_img', (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=(0,0,255), thickness=2 )
                 else:
-                    print("d4 ==============: ", d[4])
-                    print("name_list==============================", name_list)
-                    print("list_id==============================", list_id)
+                    remember_tracking = remember_tracking + 1
                     try:
                         f_name = name_list[list_id.index(d[4])]
                     except:
                         print("sai o f_name")
-
                     cv2.putText(frame, f_name, (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75, color=colours[d[4] % 32, :] * 255, thickness=2 )
+
+                    if remember_tracking == 10:
+                        if distance12 >= distance_nose1 and distance12 >= distance_nose2:
+                            if distance_center_eye_mouth >= distance_nose_ceye and distance_center_eye_mouth >= distance_nose_cmouth:
+                                rotate_img = alignment(cropImg, l_eye, r_eye)
+                                rotate_img = cv2.resize(rotate_img, (112,112))
+                                try:
+                                    quality, emb = process_onnx(rotate_img, BACKBONE, QUALITY)
+                                except:
+                                    continue
+                                # print(emb.shape)
+                                emb = emb.cpu().detach().numpy()
+                                emb = np.array(emb,dtype=np.float32)
+                                if quality[0] > 0.4:
+                                    if search(labelOriginSet, f_name) is True:
+                                        face_index.add(emb)
+                                        labelOriginSet.append(f_name)
+                                        emb = np.array(emb,dtype=np.float32).reshape(512,)
+                                        faceEncode.append(emb)
+                                        print("labelOriginSet: ", labelOriginSet)
+
+                                        #save img 
+                                        output_path = 'quality_result_good/' + f_name
+                                        dir_fold = os.path.join(path_dir, output_path)
+                                        os.makedirs(dir_fold, exist_ok = True)
+                                        frame_img_path = dir_fold + '/' + str(dt_string) + '_' + str(round(quality[0], 4)) + '.jpg'
+                                        cv2.imwrite(frame_img_path, rotate_img)
+
+                                    else:
+                                        print("running add new label data........................................")
+                                        face_index_newID.add(emb)
+                                        label_newID.append(f_name)
+                                        emb = np.array(emb,dtype=np.float32).reshape(512,)
+                                        faceEncode_newID.append(emb)
+                                        print("label_newID: ", label_newID)
+
+                                        #save img 
+                                        output_path = 'quality_result_good/' + f_name
+                                        dir_fold = os.path.join(path_dir, output_path)
+                                        os.makedirs(dir_fold, exist_ok = True)
+                                        frame_img_path = dir_fold + '/' + str(dt_string) + '_' + str(round(quality[0], 4))  + '.jpg'
+                                        cv2.imwrite(frame_img_path, rotate_img)
+
+                        remember_tracking = 0
 
                 cv2.rectangle(frame, (d[0], d[1]), (d[2], d[3]), colours[d[4] % 32, :] * 255, 3)
 
