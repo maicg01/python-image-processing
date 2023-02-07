@@ -54,8 +54,33 @@ def Sharpening(image_file):
     plt.imshow(img)
     plt.show()
 
+def Wiener_filter(image_file):
+    img = read_this(image_file)
+    # Tách các kênh màu (R, G, B)
+    r, g, b = cv2.split(img)
 
-his_Equalization(image_file)
+    # # Tạo ma trận lọc Wiener
+    # wiener_r = cv2.createWienerFilter(r.shape, 10, noiseVariance=0.1)
+    # wiener_g = cv2.createWienerFilter(g.shape, 10, noiseVariance=0.1)
+    # wiener_b = cv2.createWienerFilter(b.shape, 10, noiseVariance=0.1)
+
+    # # Áp dụng Wiener filter cho từng kênh màu
+    # result_r = cv2.filter2D(r, -1, wiener_b)
+    # result_g = cv2.filter2D(g, -1, wiener_g)
+    # result_b = cv2.filter2D(b, -1, wiener_r)
+
+    # # Ghép các kênh màu thành hình ảnh màu
+    # result = cv2.merge((result_r, result_g, result_b))
+
+    dst = cv2.fastNlMeansDenoisingColored(img, None, 10, 10, 7, 21)
+
+    # Hiển thị kết quả
+    plt.imshow(dst)
+    plt.show()
+
+
+# his_Equalization(image_file)
 # denoising(image_file)
 # Brightness_Contrast(image_file, 1.5, 10)
 # Sharpening(image_file)
+Wiener_filter(image_file)
