@@ -31,7 +31,7 @@ def his_Equalization(image_file):
     # Chuyển trở lại kênh màu RGB
     img[:,:,0] = red
     img[:,:,1] = green
-    img[:,:,1] = blue
+    img[:,:,2] = blue
 
     plt.imshow(img)
     plt.show()
@@ -55,7 +55,7 @@ def Sharpening(image_file):
     plt.show()
 
 
-# his_Equalization(image_file)
+his_Equalization(image_file)
 # denoising(image_file)
 # Brightness_Contrast(image_file, 1.5, 10)
-Sharpening(image_file)
+# Sharpening(image_file)
