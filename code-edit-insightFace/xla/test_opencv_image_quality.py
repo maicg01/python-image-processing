@@ -1,6 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import wiener
 
 # image_src = cv2.imread('/home/maicg/Documents/Me/test-face-recognition/A_quality/8_2/frame195_0.0.jpg')
 # # image_src = cv2.cvtColor(image_src, cv2.COLOR_BGR2RGB)
@@ -78,9 +79,27 @@ def Wiener_filter(image_file):
     plt.imshow(dst)
     plt.show()
 
+def Wiener_filter_new(image_file):
+    img = read_this(image_file)
+
+    # Convert image to float
+    img = np.float32(img) / 255.0
+
+    # Apply Wiener filter
+    img_denoised = np.zeros(img.shape)
+    for i in range(img.shape[2]):
+        img_denoised[..., i] = wiener(img[..., i], mysize=(5, 5))
+
+    # Convert image back to 8-bit
+    img_denoised = np.uint8(img_denoised * 255.0)
+
+    # Hiển thị kết quả
+    plt.imshow(img_denoised)
+    plt.show()
 
 # his_Equalization(image_file)
 # denoising(image_file)
 # Brightness_Contrast(image_file, 1.5, 10)
 # Sharpening(image_file)
-Wiener_filter(image_file)
+# Wiener_filter(image_file)
+Wiener_filter_new(image_file)
