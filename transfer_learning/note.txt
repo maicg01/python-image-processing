@@ -3,3 +3,6 @@ https://colab.research.google.com/drive/1M1VlOh4wOQ6od5gvDfVeVQlAdjUgvOfU?usp=sh
 
 link transffer learning va bai toan face recognition
 https://viblo.asia/p/transfer-learning-va-bai-toan-face-recognition-3Q75w7xD5Wb
+
+link huong dan EfficientNet_COVID de hieu hon ve transfer learning bang facenet_pytorch
+https://www.freecodecamp.org/news/deep-learning-with-pytorch/
