@@ -1,0 +1,2 @@
+link transfer learning by keras
+https://colab.research.google.com/drive/1M1VlOh4wOQ6od5gvDfVeVQlAdjUgvOfU?usp=sharing#scrollTo=d7el-gg0TE-U
