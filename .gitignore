@@ -1,0 +1,14 @@
+*.avi
+*.mp4
+*.pt
+*.pth
+*.pyc
+*.jpg
+*.onnx
+*.pkl
+*.log
+*.int
+*.h5
+/insight-face
+/pytorch-model
+
