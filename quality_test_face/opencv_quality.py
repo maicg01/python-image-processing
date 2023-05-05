@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # kiem tra do tuong phan cua anh
 # <60
-path_img = "/home/maicg/Documents/Me/test-face-recognition/A_quality/7_2"
+path_img = "/home/maicg/Documents/Me/CERBERUS/CerberusAISDK/database/face/person83"
 # path_img = "/home/maicg/Documents/Me/faceRecogCplus/save_image/hiep.tran"
 # for img in os.listdir(path_img):
 #     name_img = os.path.join(path_img, img)
@@ -39,21 +39,21 @@ def check_quality(imgBgr):
     gray = cv2.cvtColor(imgBgr, cv2.COLOR_BGR2GRAY)
     blur = cv2.medianBlur(gray, 5)
 
-    pi = math.pi
-    edges = cv2.Canny(blur, 100, 200)
-    lines = cv2.HoughLinesP(edges, 1, pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
+    # pi = math.pi
+    # edges = cv2.Canny(blur, 100, 200)
+    # lines = cv2.HoughLinesP(edges, 1, pi / 180, threshold=100, minLineLength=100, maxLineGap=10)
 
-    if cv2.mean(gray)[0] < 50:
+    if cv2.mean(gray)[0] < 25:
         print("gia tri trung binh mau: ", cv2.mean(gray)[0])
         return False
     
-    if cv2.Laplacian(blur, cv2.CV_64F).var() < 50:
+    if cv2.Laplacian(blur, cv2.CV_64F).var() < 25:
         print("gia tri nhieu: ", cv2.Laplacian(blur, cv2.CV_64F).var())
         return False
     
-    if lines is not None:
-        print("not line")
-        return False
+    # if lines is not None:
+    #     print("not line")
+    #     return False
     
     return True
 
