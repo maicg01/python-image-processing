@@ -11,4 +11,4 @@
 *.h5
 /insight-face
 /pytorch-model
-
+.vscode
