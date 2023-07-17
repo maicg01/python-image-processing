@@ -24,7 +24,7 @@ def distance2bbox(points, distance, max_shape=None):
             boundaries (left, top, right, bottom).
         max_shape (tuple): Shape of the image.
 
-    Returns:
+    Returns
         Tensor: Decoded bboxes.
     """
     x1 = points[:, 0] - distance[:, 0]
