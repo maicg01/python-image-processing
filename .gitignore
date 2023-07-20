@@ -12,3 +12,6 @@
 /insight-face
 /pytorch-model
 .vscode
+insight-face/mmdet/models/dense_heads/__pycache__/
+insight-face/mmdet.egg-info/SOURCES.txt
+insight-face/mmdet.egg-info/PKG-INFO
