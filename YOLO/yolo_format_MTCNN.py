@@ -22,10 +22,10 @@ def main():
     import glob
     #load moder 
     detector = MTCNN()
-    pathdir = '/home/maicg/Downloads/archive/Train/Train/JPEGImages'
-    path_txt = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/exp2/labels'
-    save_path = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/exp2/save_path'
-    save_txt = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/exp2/save_txt'
+    pathdir = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/danhnhan/images'
+    path_txt = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/danhnhan/labels'
+    save_path = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/danhnhan/img_lb'
+    save_txt = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/danhnhan/lb'
     for dirImage in sorted(os.listdir(pathdir)):
         pathName = os.path.join(pathdir,dirImage)
         name_image = dirImage.split('.')[0]
@@ -45,7 +45,7 @@ def main():
             x, y, w, h = face['box']
             x1,y1,x2,y2 = x, y, x+w, y+h
             
-            cv2.rectangle(image, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
+            # cv2.rectangle(image, (x1,y1)  , (x2,y2) , (255,0,0) , 2)
             print("x1,y1,x2,y2: ", x1,y1,x2,y2)
             if x1 < 0 or x2 < 0 or y1 < 0 or y2 < 0:
                 print("error outside")
