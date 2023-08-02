@@ -3,8 +3,8 @@ import random
 import os
 import shutil
 
-PATH_IMG = 'runs/detect/danhnhan/train/img_lb'
-PATH_TXT = 'runs/detect/danhnhan/train/lb'
+PATH_IMG = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/face_pose'
+PATH_TXT = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/save_face_pose'
 img_paths = glob.glob(PATH_IMG+'/*.jpg')
 txt_paths = glob.glob(PATH_TXT+'/*.txt')
 
@@ -28,7 +28,7 @@ valid_img_paths = img_paths[train_size:]
 valid_txt_paths = txt_paths[train_size:]
 
 # copy them to images, labels folders
-path = '/home/maicg/Documents/Me/YOLO/yolov5/datatrain'
+path = '/home/maicg/Documents/Me/YOLO/yolov5/datasets/face_pose'
 images = path+'/images' 
 labels = path+'/labels'
 os.mkdir(images)
