@@ -1,57 +1,28 @@
-import glob
-import random
 import os
+import random
 import shutil
 
-PATH_IMG = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/face_pose'
-PATH_TXT = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/save_face_pose'
-img_paths = glob.glob(PATH_IMG+'/*.jpg')
-txt_paths = glob.glob(PATH_TXT+'/*.txt')
+SOURCES_DIR = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/data_face_pose/'
+DES = '/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/data_face_pose/data/'
+images = os.listdir(SOURCES_DIR + 'images')
+random.shuffle(images)
+# print(len(images))
 
-# print(len(img_paths))
+labels = os.listdir(SOURCES_DIR + 'labels')
+# print(len(labels))
 
-# Shuffle two list
-img_txt = list(zip(img_paths, txt_paths))
-random.seed(43)
-random.shuffle(img_txt)
-img_paths, txt_paths = zip(*img_txt)
+os.makedirs(DES + 'images/train/')
+os.makedirs(DES + 'images/val/')
+os.makedirs(DES + 'labels/train/')
+os.makedirs(DES + 'labels/val/')
 
-data_size = len(img_paths)
-r = 0.8
-train_size = int(data_size * r)
-
-#split
-train_img_paths = img_paths[:train_size]
-train_txt_paths = txt_paths[:train_size]
-
-valid_img_paths = img_paths[train_size:]
-valid_txt_paths = txt_paths[train_size:]
-
-# copy them to images, labels folders
-path = '/home/maicg/Documents/Me/YOLO/yolov5/datasets/face_pose'
-images = path+'/images' 
-labels = path+'/labels'
-os.mkdir(images)
-os.mkdir(labels)
-
-train_img = images + '/train'
-val_img = images + '/val'
-
-train_label = labels + '/train'
-val_label = labels + '/val'
-
-os.mkdir(train_img)
-os.mkdir(val_img)
-os.mkdir(train_label)
-os.mkdir(val_label)
-
-def copy(paths, folder):
-    for p in paths:
-        shutil.copy(p, folder)
-
-copy(train_img_paths, train_img)
-copy(valid_img_paths, val_img)
-copy(train_txt_paths, train_label)
-copy(valid_txt_paths, val_label)
+for image in images[:int(len(images)*0.8)]:
+    shutil.copy(SOURCES_DIR + 'images/' + image, DES + 'images/train/' + image)
+    if os.path.exists(SOURCES_DIR + 'labels/' + image[:-3] + 'txt'):
+        shutil.copy(SOURCES_DIR + 'labels/' + image[:-3] + 'txt', DES + 'labels/train/' + image[:-3] + 'txt')
+for image in images[int(len(images)*0.8):]:
+    shutil.copy(SOURCES_DIR + 'images/' + image, DES + 'images/val/' + image)
+    if os.path.exists(SOURCES_DIR + 'labels/' + image[:-3] + 'txt'):
+        shutil.copy(SOURCES_DIR + 'labels/' + image[:-3] + 'txt', DES + 'labels/val/' + image[:-3] + 'txt')
 
 print("done")
