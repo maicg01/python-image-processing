@@ -1,8 +1,8 @@
 # them keypoint rong cho cac keypoit bi thieu cua yolo-pose
 import os
 # Mở file để đọc nội dung
-file_txt = "/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/exp5/labels"
-file_txt_save = "/home/maicg/Documents/Me/YOLO/yolov5/runs/detect/datatrainFacePose/labels"
+file_txt = "/home/maicg/Desktop/total_train_data/lp_real_1/labels"
+file_txt_save = "/home/maicg/Desktop/total_train_data/lp_real_1/labels_pose"
 
 for dir_txt in sorted(os.listdir(file_txt)):
     name_txt = os.path.join(file_txt,dir_txt)
