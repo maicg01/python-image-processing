@@ -1,4 +1,8 @@
 import cv2
+import os
+
+pwd = os.path.dirname(os.path.abspath(__file__))
+print (pwd)
 
 def mosaic_blur(image, block_size):
     # Kích thước ảnh
