@@ -9,9 +9,14 @@
 *.log
 *.int
 *.h5
+*.npy
 /insight-face
 /pytorch-model
 .vscode
 insight-face/mmdet/models/dense_heads/__pycache__/
 insight-face/mmdet.egg-info/SOURCES.txt
 insight-face/mmdet.egg-info/PKG-INFO
+xla_face_recognition/data/
+xla_face_recognition/log_prunting.txt
+xla_face_recognition/save_models/
+dive_into_deep_learning/
