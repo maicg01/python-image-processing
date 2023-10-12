@@ -10,6 +10,7 @@
 *.int
 *.h5
 *.npy
+*.txt
 /insight-face
 /pytorch-model
 .vscode
