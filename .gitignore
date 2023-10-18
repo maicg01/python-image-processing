@@ -11,6 +11,7 @@
 *.h5
 *.npy
 *.txt
+*.bin
 /insight-face
 /pytorch-model
 .vscode
