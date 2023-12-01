@@ -45,7 +45,7 @@ if __name__ == '__main__':
     src_names = np.load("collection_face2.npy", allow_pickle=True).tolist()
     print("src_embedded", src_embedded.ntotal)
 
-    list_remove = indices_embedding_error(src_embedded, src_names, name_ID="ID54")
+    list_remove = indices_embedding_error(src_embedded, src_names, name_ID="ID18")
     print(list_remove)
 
     if len(list_remove) > 0:
