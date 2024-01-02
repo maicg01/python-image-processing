@@ -1,7 +1,7 @@
 import numpy as np
 
 # Đường dẫn đến file .npy ban đầu
-input_file_path = "/home/maicg/Documents/Me/python-image-processing/YOLO/ten_vi_converted.npy"
+input_file_path = "/home/maicg/Documents/Me/CERBERUS/GitLab/cccdserverdjango/database_local/cerberus_ada_r50.npy"
 
 # Đọc dữ liệu từ file .npy
 names = np.load(input_file_path)
