@@ -6,11 +6,12 @@ import faiss
 
 def rm_id(id):
     index_to_delete = []
-    face_collection_embedded = faiss.read_index("collection_face.bin")
-    face_collection_ids = np.load("collection_face.npy", allow_pickle=True).tolist()
+    face_collection_embedded = faiss.read_index("/home/maicg/Documents/Me/CERBERUS/GitLab/cccdserverdjango/database/test/collection_face.bin")
+    face_collection_ids = np.load("/home/maicg/Documents/Me/CERBERUS/GitLab/cccdserverdjango/database/test/collection_face.npy", allow_pickle=True).tolist()
     for i in range(len(face_collection_ids)):
-        print(face_collection_ids[i])
+        # print(face_collection_ids[i])
         if face_collection_ids[i] == id:
+            print(face_collection_ids[i])
             # delete index
             # face_collection_embedded.remove_ids(np.array([i]))
             # face_collection_ids = np.delete(face_collection_ids, i)
@@ -22,7 +23,7 @@ def rm_id(id):
     # Save the modified indexes and names to their respective files
     faiss.write_index(face_collection_embedded, "collection_face2.bin")
     np.save("collection_face2.npy", np.array(face_collection_ids))
-rm_id("ID18")
+rm_id("ID407")
 
 
 # import cv2
