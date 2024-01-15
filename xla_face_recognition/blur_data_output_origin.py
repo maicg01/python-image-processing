@@ -29,3 +29,19 @@ for dir in os.listdir(path_read):
         # print(path_save_img)
         # cv2.imwrite(path_save_img, img2)
         cv2.imwrite(path_save_img_blur, img_blur)
+
+
+#doan them vao trong code
+for i in range(10):
+    img_blur = cv2.blur(base_image, (i*5 + 5, i*5 + 5))
+    path_list = folder_path.split('/')
+    list_name = path_list[-1]
+    path_save_img_blur = folder_path + '/' + list_name + "_blur" + str(i) + ".jpg"
+    face_vector = self.get_face_encoding(img_blur, normalize=True)
+    if base_vector is not None and face_vector is not None and len(base_vector) > 0 and len(
+            face_vector) > 0:
+        is_same, distance = self.compare_encoding(base_vector, face_vector)
+        if distance >= 0.7:
+            face_embedded.add(face_vector)
+            face_ids.append(list_name + "_blur" + str(i))
+            cv2.imwrite(path_save_img_blur, img_blur)
