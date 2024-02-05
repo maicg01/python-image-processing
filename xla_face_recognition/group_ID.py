@@ -119,6 +119,20 @@ def creat_new_data(embedding_search, src_index, src_names, src_index_collection,
     # print(I_collection[0][4])
     print(dict_ID)
 
+def merge_ID(list_id : list, src_names, src_names_collection):
+    fname = list_id[0]
+    for id in list_id:
+        if "ID" in id:
+            for i in range(len(src_names_collection)):
+                if src_names_collection[i] == id:
+                    src_names_collection[i] = fname
+        else:
+           for i in range(len(src_names)):
+                if src_names[i] == id:
+                    src_names[i] = fname
+
+
+
 # test
 if __name__ == '__main__':
     src_embedded = faiss.read_index("/home/maicg/Documents/Me/python-image-processing/xla_face_recognition/data/cerberus_ada_r50.bin")
@@ -158,7 +172,15 @@ if __name__ == '__main__':
     ind_name_search = [idx for idx, name in enumerate(src_name_search) if name == id]
     embedding = np.array(src_search.reconstruct(ind_name_search[0])).reshape((1,512))
     creat_new_data(embedding, src_embedded, src_names, src_index_collection, src_names_collection)
-                
+
+    # print("===")
+    # print(src_name_search)
+    # print("===")
+    # for i in range(len(src_name_search)):
+    #     if src_name_search[i] == 'ID1067':
+    #         src_name_search[i] = "id"
+    
+    # print(src_name_search)            
 
                         
 
