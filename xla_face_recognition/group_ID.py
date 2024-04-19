@@ -71,7 +71,7 @@ def group_id(list_ID_group: list, src_index, src_names, src_index_collection, sr
         # data.update({"case3": lst_name_case_3})
 
         if len(case_1) > 0:
-            similarity = ((sum(case_1) / len(case_1))*100) / threshold_take
+            similarity = round(((sum(case_1) / len(case_1))*100) / threshold_take, 2)
             lst_name_case_1.insert(0, lst_name[0])
             data.update({
                 "case_1": {
@@ -81,7 +81,7 @@ def group_id(list_ID_group: list, src_index, src_names, src_index_collection, sr
             })
         
         if len(case_2) > 0:
-            similarity = (sum(case_2) / len(case_2)*100) / threshold_take
+            similarity = round((sum(case_2) / len(case_2)*100) / threshold_take, 2)
             lst_name_case_2.insert(0, lst_name[0])
             data.update({
                 "case_2": {
@@ -91,7 +91,7 @@ def group_id(list_ID_group: list, src_index, src_names, src_index_collection, sr
             })
         
         if len(case_3) > 0:
-            similarity = (sum(case_3) / len(case_3)*100) / threshold_take
+            similarity = round((sum(case_3) / len(case_3)*100) / threshold_take, 2)
             lst_name_case_3.insert(0, lst_name[0])
             data.update({
                 "case_3": {
@@ -103,7 +103,7 @@ def group_id(list_ID_group: list, src_index, src_names, src_index_collection, sr
     
     return data
 
-def creat_new_data(embedding_search, src_index, src_names, src_index_collection, src_names_collection, threshold_take = 0.3, num_search = 20):
+def check_create_new_data(embedding_search, src_index, src_names, src_index_collection, src_names_collection, threshold_take = 0.42, num_search = 20):
     D_src, I_src = src_index.search(embedding_search, num_search)
     D_collection, I_collection = src_index_collection.search(embedding_search, num_search)
 
@@ -122,13 +122,22 @@ def creat_new_data(embedding_search, src_index, src_names, src_index_collection,
             elif dict_ID[src_names[I_src[0][i]]] < D_src[0][i]:
                 dict_ID[src_names[I_src[0][i]]] = D_src[0][i]
 
-    print('D_collection: ',D_collection)
+    # print('D_collection: ',D_collection)
     # print(I_collection[0][0])
     # print(I_collection[0][1])
     # print(I_collection[0][2])
     # print(I_collection[0][3])
     # print(I_collection[0][4])
-    print(dict_ID)
+    
+
+    # Tính trung bình cộng các giá trị
+    mean_value = sum(dict_ID.values()) / len(dict_ID) *100
+
+    # Tạo từ điển mới chứa danh sách khóa và giá trị trung bình
+    result_dict = {"list_ID": list(dict_ID.keys()), "similarity": mean_value}  
+    # print(result_dict)
+
+    return result_dict                           
 
 def merge_ID(list_id : list, src_names, src_names_collection):
     fname = list_id[0]
@@ -168,11 +177,11 @@ if __name__ == '__main__':
     print("src_index_collection", src_index_collection.ntotal)
     print("src_names_collection", len(src_names_collection))
 
-    list_ID = ['ID4', 'ID5', 'ID11', 'ID511']
+    # list_ID = ['ID4', 'ID5', 'ID11', 'ID511']
     # list_ID = ['ID0', 'ID2']
     # list_ID = ['ID6', 'ID25']
     # list_ID = ['ID7', 'ID24']
-    # list_ID = ['ID587', 'ID586', 'ID522', 'ID521', 'ID520', 'ID519']
+    list_ID = ['ID587', 'ID586', 'ID522', 'ID521', 'ID520', 'ID519']
 
     results = group_id(list_ID, src_embedded, src_names, src_index_collection, src_names_collection)
 
@@ -182,7 +191,7 @@ if __name__ == '__main__':
     id = sys.argv[1]
     ind_name_search = [idx for idx, name in enumerate(src_name_search) if name == id]
     embedding = np.array(src_search.reconstruct(ind_name_search[0])).reshape((1,512))
-    creat_new_data(embedding, src_embedded, src_names, src_index_collection, src_names_collection)
+    check_create_new_data(embedding, src_embedded, src_names, src_index_collection, src_names_collection)
 
     # print("===")
     # print(src_name_search)

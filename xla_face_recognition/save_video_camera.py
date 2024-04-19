@@ -35,7 +35,7 @@ def save_camera_video(output_path, frame_rate=24.0):
     cv2.destroyAllWindows()
 
 # Ví dụ sử dụng
-output_path = '12012024output_cty.mp4'  # Đường dẫn và tên file video đầu ra
+output_path = sys.argv[2]  # Đường dẫn và tên file video đầu ra
 frame_rate = 30.0  # Tốc độ khung hình (FPS)
 
 # Gọi hàm save_camera_video để đọc khung hình từ camera và lưu thành video
