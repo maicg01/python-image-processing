@@ -1,0 +1,82 @@
+import cv2
+from ultralytics import YOLO
+
+def predict_video_yolov8(video_path, model_path='yolov8m_drone.pt'):
+    # Load YOLOv8 model
+    model = YOLO(model_path)
+
+    # Open video file
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"Error opening video file: {video_path}")
+        return
+
+    # Get video properties
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # fps = int(cap.get(cv2.CAP_PROP_FPS))
+    # total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    # # Define the codec and create VideoWriter object
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    # out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+
+    # Open text file to write detections
+    # with open(output_txt_path, 'w') as txt_file:
+    frame_number = 0
+    output_path_save = "/home/lab-02/Documents/maicg/depth_anything/data_yolo_format/data_demo/"
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # Predict using YOLOv8
+        results = model(frame, conf=0.25)
+
+        # Draw bounding boxes and save to txt
+        frame_save = frame.copy()
+        if frame_number % 10 == 0:
+            for result in results:
+                for box in result.boxes:
+                    # Extract bounding box information
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    conf = float(box.conf[0])
+                    class_id = int(box.cls[0])
+                    class_name = model.names[class_id]
+
+                    # Write to txt file in YOLO format (class_id, center_x, center_y, width, height)
+                    center_x = (x1 + x2) / 2 / width
+                    center_y = (y1 + y2) / 2 / height
+                    box_width = (x2 - x1) / width
+                    box_height = (y2 - y1) / height
+                    name_txt = f"image_{frame_number}.txt"
+                    output_txt_path = output_path_save + "labels/" + name_txt
+                    output_image_path = output_path_save + "images/" + name_txt[:-3] + "jpg"
+
+                    with open(output_txt_path, 'w') as txt_file:
+                        txt_file.write(f"{class_id} {center_x} {center_y} {box_width} {box_height}\n")
+                        cv2.imwrite(output_image_path , frame_save)
+
+                    # Draw bounding box on frame
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(frame, f"{class_name} {conf:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        # Write the frame to the output video
+        frame_number += 1
+
+        # Display the resulting frame
+        cv2.imshow('Frame', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Release everything if job is finished
+    cap.release()
+    cv2.destroyAllWindows()
+
+# Example usage
+video_path = "/mnt/data/shared/drone_demo/demo1.mp4"
+# output_video_path = "path/to/your/output_video.mp4"
+# output_txt_path = "path/to/your/output_annotations.txt"
+# model_path = "yolov8n.pt"
+
+predict_video_yolov8(video_path)
