@@ -4,6 +4,8 @@
 # pip install imutils
 # pip install pytesseract
 
+# van de: https://stackoverflow.com/questions/58010660/detect-image-orientation-angle-based-on-text-direction
+
 import cv2
 import imutils
 import pytesseract
