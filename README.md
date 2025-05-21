@@ -1,4 +1,5 @@
 ﻿# python-image-processing
+ https://github.com/gaoxiang12/slambook2/tree/master
  # NOTE chay scrfd cua insightFace
 ha version pytorch
 
